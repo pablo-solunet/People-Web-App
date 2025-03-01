@@ -1,13 +1,26 @@
 import { NextResponse } from 'next/server';
 import { BigQuery } from '@google-cloud/bigquery';
-import path from 'path';
 
-const projectId = 'data-warehouse-311917';
-const datasetId = 'z_people';
-const tableId = 'permissions';
+// Se leen las configuraciones desde variables de entorno
+const projectId = process.env.BIGQUERY_PROJECT_ID;
+if (!projectId) {
+  throw new Error('BIGQUERY_PROJECT_ID no está definido en las variables de entorno.');
+}
 
+const datasetId = process.env.BIGQUERY_DATASET_ID || 'z_people';
+const tableId = process.env.BIGQUERY_TABLE_ID || 'permissions';
+
+const credentials = process.env.BIGQUERY_CREDENTIALS
+  ? JSON.parse(process.env.BIGQUERY_CREDENTIALS)
+  : null;
+if (!credentials) {
+  throw new Error('BIGQUERY_CREDENTIALS no está definido en las variables de entorno.');
+}
+
+// Configuración de BigQuery usando las credenciales proporcionadas
 const bigquery = new BigQuery({
-  keyFilename: path.join(process.cwd(), 'credencialesbq.json'),
+  projectId,
+  credentials,
 });
 
 export async function GET() {
@@ -29,7 +42,9 @@ export async function GET() {
     return NextResponse.json({ success: true, permissions });
   } catch (error) {
     console.error('Error fetching permissions:', error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Error fetching permissions' }, { status: 500 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Error fetching permissions' },
+      { status: 500 }
+    );
   }
 }
-

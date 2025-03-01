@@ -1,12 +1,23 @@
 import { GoogleAuth } from 'google-auth-library';
-import path from 'path';
 
-const projectId = 'data-warehouse-311917';
-const datasetId = 'z_people';
-const tableId = 'user_permissions';
+// Se leen las configuraciones desde variables de entorno
+const projectId = process.env.BIGQUERY_PROJECT_ID;
+if (!projectId) {
+  throw new Error('BIGQUERY_PROJECT_ID no está definido en las variables de entorno.');
+}
+
+const datasetId = process.env.BIGQUERY_DATASET_ID || 'z_people';
+const tableId = process.env.BIGQUERY_TABLE_ID || 'user_permissions';
+
+const credentials = process.env.BIGQUERY_CREDENTIALS
+  ? JSON.parse(process.env.BIGQUERY_CREDENTIALS)
+  : null;
+if (!credentials) {
+  throw new Error('BIGQUERY_CREDENTIALS no está definido en las variables de entorno.');
+}
 
 const auth = new GoogleAuth({
-  keyFilename: path.join(process.cwd(), 'credencialesbq.json'),
+  credentials,
   scopes: ['https://www.googleapis.com/auth/bigquery'],
 });
 
@@ -45,13 +56,15 @@ export async function getUserPermissions(userId: string) {
       throw new Error('Query errors occurred: ' + JSON.stringify(data.errors));
     }
 
-    const userPermissions = data.rows ? data.rows.map((row: any) => ({
-      user_permission_id: row.f[0].v,
-      user_id: row.f[1].v,
-      permission_id: row.f[2].v,
-      resource: row.f[3].v,
-      action: row.f[4].v,
-    })) : [];
+    const userPermissions = data.rows
+      ? data.rows.map((row: any) => ({
+          user_permission_id: row.f[0].v,
+          user_id: row.f[1].v,
+          permission_id: row.f[2].v,
+          resource: row.f[3].v,
+          action: row.f[4].v,
+        }))
+      : [];
 
     return { success: true, userPermissions };
   } catch (error) {
@@ -59,4 +72,3 @@ export async function getUserPermissions(userId: string) {
     throw error;
   }
 }
-

@@ -1,48 +1,55 @@
 import { GoogleAuth } from 'google-auth-library';
-import path from 'path';
 
-const projectId = 'data-warehouse-311917';
-const datasetId = 'z_people';
-const tableId = 'agent_form_data';
+// Se leen las configuraciones desde variables de entorno
+const projectId = process.env.BIGQUERY_PROJECT_ID;
+if (!projectId) {
+  throw new Error('BIGQUERY_PROJECT_ID no está definido en las variables de entorno.');
+}
 
+const datasetId = process.env.BIGQUERY_DATASET_ID || 'z_people';
+const tableId = process.env.BIGQUERY_TABLE_ID || 'agent_form_data';
+
+const credentials = process.env.BIGQUERY_CREDENTIALS
+  ? JSON.parse(process.env.BIGQUERY_CREDENTIALS)
+  : null;
+if (!credentials) {
+  throw new Error('BIGQUERY_CREDENTIALS no está definido en las variables de entorno.');
+}
+
+// Configuración de autenticación usando las credenciales obtenidas
 const auth = new GoogleAuth({
-  keyFilename: path.join(process.cwd(), 'credencialesbq.json'),
+  credentials,
   scopes: ['https://www.googleapis.com/auth/bigquery'],
 });
 
 export async function updateAgentFormData(data: any) {
   try {
-    let query;
-    const isLote = data.isLote;
-    const lote_id = data.lote_id;
-    const id_reg = data.id_reg;
-    const estado = data.estado;
-    const area = data.area;
-    const legajo = data.legajo;
-    const observaciones = data.observaciones;
+    // Extraer variables relevantes del objeto recibido
+    const { isLote, lote_id, id_reg, estado, area, legajo, observaciones } = data;
 
-      query = `
-        UPDATE \`${projectId}.${datasetId}.${tableId}\`
-        SET 
-          estado = "${estado}",
-          area = "${area}",
-          legajo = CASE
+    // Construcción de la consulta de actualización; ten en cuenta que se están insertando valores directamente.
+    // Es recomendable parametrizar estos valores para evitar inyección SQL.
+    const query = `
+      UPDATE \`${projectId}.${datasetId}.${tableId}\`
+      SET 
+        estado = "${estado}",
+        area = "${area}",
+        legajo = CASE
           WHEN "${legajo}" IS NOT NULL AND "${legajo}" != '' AND "${legajo}" != 'undefined' 
             THEN "${legajo}"
             ELSE legajo
-          END,
-          observaciones = CASE
-            WHEN observaciones IS NOT NULL AND observaciones != '' AND "${observaciones}" IS NOT NULL AND "${observaciones}" != '' AND "${observaciones}" != 'undefined' 
+        END,
+        observaciones = CASE
+          WHEN observaciones IS NOT NULL AND observaciones != '' AND "${observaciones}" IS NOT NULL AND "${observaciones}" != '' AND "${observaciones}" != 'undefined' 
             THEN CONCAT("${observaciones}", '; ', observaciones)
-            WHEN observaciones IS NULL OR observaciones = '' OR observaciones = 'undefined'
+          WHEN observaciones IS NULL OR observaciones = '' OR observaciones = 'undefined'
             THEN "${observaciones}"
-            ELSE observaciones
-          END
-        WHERE id_reg = "${id_reg}"
-      `;
-      
+          ELSE observaciones
+        END
+      WHERE id_reg = "${id_reg}"
+    `;
 
-    console.log('---------- query query:', query);
+    console.log('---------- query:', query);
 
     const url = `https://bigquery.googleapis.com/bigquery/v2/projects/${projectId}/queries`;
 
@@ -54,6 +61,8 @@ export async function updateAgentFormData(data: any) {
       Authorization: `Bearer ${accessToken.token}`,
     };
 
+    // Ejemplo de queryParameters; aunque en esta consulta se inyectan los valores directamente,
+    // se mantiene este bloque para ilustrar cómo podrías parametrizar otros casos.
     const requestBody = {
       query: query,
       useLegacySql: false,
@@ -89,4 +98,3 @@ export async function updateAgentFormData(data: any) {
     throw error;
   }
 }
-

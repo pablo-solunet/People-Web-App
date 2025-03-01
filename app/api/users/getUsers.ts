@@ -1,12 +1,23 @@
 import { BigQuery } from '@google-cloud/bigquery';
-import path from 'path';
 
-const projectId = 'data-warehouse-311917';
-const datasetId = 'z_people';
-const tableId = 'users';
+const projectId = process.env.BIGQUERY_PROJECT_ID;
+if (!projectId) {
+  throw new Error('BIGQUERY_PROJECT_ID no está definido en las variables de entorno.');
+}
+
+const datasetId = process.env.BIGQUERY_DATASET_ID || 'z_people';
+const tableId = process.env.BIGQUERY_USERS_TABLE_ID || 'users';
+
+const credentials = process.env.BIGQUERY_CREDENTIALS
+  ? JSON.parse(process.env.BIGQUERY_CREDENTIALS)
+  : null;
+if (!credentials) {
+  throw new Error('BIGQUERY_CREDENTIALS no está definido en las variables de entorno.');
+}
 
 const bigquery = new BigQuery({
-  keyFilename: path.join(process.cwd(), 'credencialesbq.json'),
+  projectId,
+  credentials,
 });
 
 export async function getUsers() {
@@ -34,4 +45,3 @@ export async function getUsers() {
     throw error;
   }
 }
-

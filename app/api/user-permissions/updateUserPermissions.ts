@@ -1,21 +1,36 @@
 import { GoogleAuth } from 'google-auth-library';
-import path from 'path';
 
-const projectId = 'data-warehouse-311917';
-const datasetId = 'z_people';
-const tableId = 'user_permissions';
+// Se leen las configuraciones desde las variables de entorno
+const projectId = process.env.BIGQUERY_PROJECT_ID;
+if (!projectId) {
+  throw new Error('BIGQUERY_PROJECT_ID no está definido en las variables de entorno.');
+}
+
+const datasetId = process.env.BIGQUERY_DATASET_ID || 'z_people';
+const tableId = process.env.BIGQUERY_TABLE_ID || 'user_permissions';
+
+const credentials = process.env.BIGQUERY_CREDENTIALS
+  ? JSON.parse(process.env.BIGQUERY_CREDENTIALS)
+  : null;
+if (!credentials) {
+  throw new Error('BIGQUERY_CREDENTIALS no está definido en las variables de entorno.');
+}
 
 const auth = new GoogleAuth({
-  keyFilename: path.join(process.cwd(), 'credencialesbq.json'),
+  credentials,
   scopes: ['https://www.googleapis.com/auth/bigquery'],
 });
 
-export async function updateUserPermissions(userId: string, permissionsToAdd: any[], permissionsToRemove: any[]) {
+export async function updateUserPermissions(
+  userId: string,
+  permissionsToAdd: any[],
+  permissionsToRemove: any[]
+) {
   try {
     const client = await auth.getClient();
     const accessToken = await client.getAccessToken();
 
-    console.log("Permissions to ADD", permissionsToAdd)
+    console.log("Permissions to ADD", permissionsToAdd);
 
     const headers = {
       'Content-Type': 'application/json',
@@ -24,7 +39,7 @@ export async function updateUserPermissions(userId: string, permissionsToAdd: an
 
     const url = `https://bigquery.googleapis.com/bigquery/v2/projects/${projectId}/queries`;
 
-    // Remove permissions
+    // Eliminar permisos
     if (permissionsToRemove && permissionsToRemove.length > 0) {
       const deleteQuery = `
         DELETE FROM \`${projectId}.${datasetId}.${tableId}\`
@@ -38,7 +53,11 @@ export async function updateUserPermissions(userId: string, permissionsToAdd: an
         parameterMode: 'NAMED',
         queryParameters: [
           { name: 'userId', parameterType: { type: 'STRING' }, parameterValue: { value: userId } },
-          { name: 'permissionIds', parameterType: { type: 'ARRAY', arrayType: { type: 'STRING' } }, parameterValue: { arrayValues: permissionsToRemove.map(p => ({ value: p.user_permission_id })) } },
+          {
+            name: 'permissionIds',
+            parameterType: { type: 'ARRAY', arrayType: { type: 'STRING' } },
+            parameterValue: { arrayValues: permissionsToRemove.map(p => ({ value: p.user_permission_id })) },
+          },
         ],
       };
 
@@ -55,18 +74,21 @@ export async function updateUserPermissions(userId: string, permissionsToAdd: an
       }
     }
 
-    // Add permissions
+    // Agregar permisos
     if (permissionsToAdd && permissionsToAdd.length > 0) {
       const insertQuery = `
         INSERT INTO \`${projectId}.${datasetId}.${tableId}\`
         (user_permission_id, user_id, permission_id, resource, action)
         VALUES
-        ${permissionsToAdd.map((_, index) => 
-          `(@user_permission_id${index}, @userId${index}, @permission_id${index}, @resource${index}, @action${index})`
-        ).join(',')}
+        ${permissionsToAdd
+          .map(
+            (_, index) =>
+              `(@user_permission_id${index}, @userId${index}, @permission_id${index}, @resource${index}, @action${index})`
+          )
+          .join(',')}
       `;
 
-      console.log("----------- insertQuery : ", insertQuery)
+      console.log("----------- insertQuery:", insertQuery);
 
       const insertQueryParameters = permissionsToAdd.flatMap((p, index) => [
         { name: `user_permission_id${index}`, parameterType: { type: 'STRING' }, parameterValue: { value: p.user_permission_id } },
@@ -76,7 +98,7 @@ export async function updateUserPermissions(userId: string, permissionsToAdd: an
         { name: `action${index}`, parameterType: { type: 'STRING' }, parameterValue: { value: p.action } },
       ]);
 
-      console.log("----------- insertQueryParameters : ", insertQueryParameters)
+      console.log("----------- insertQueryParameters:", insertQueryParameters);
 
       const insertRequestBody = {
         query: insertQuery,
@@ -98,15 +120,14 @@ export async function updateUserPermissions(userId: string, permissionsToAdd: an
       }
     }
 
-    return { 
-      success: true, 
-      message: 'User permissions updated successfully', 
+    return {
+      success: true,
+      message: 'User permissions updated successfully',
       addedCount: permissionsToAdd ? permissionsToAdd.length : 0,
-      removedCount: permissionsToRemove ? permissionsToRemove.length : 0
+      removedCount: permissionsToRemove ? permissionsToRemove.length : 0,
     };
   } catch (error) {
     console.error('Error updating user permissions:', error);
     throw error;
   }
 }
-

@@ -1,18 +1,33 @@
 import { BigQuery } from '@google-cloud/bigquery';
 import { NextResponse } from 'next/server';
-import path from 'path';
+
+// Carga las credenciales desde la variable de entorno (almacena el JSON como string)
+const credentials = process.env.BIGQUERY_CREDENTIALS
+  ? JSON.parse(process.env.BIGQUERY_CREDENTIALS)
+  : null;
+
+if (!credentials) {
+  throw new Error('BIGQUERY_CREDENTIALS no está definida en las variables de entorno.');
+}
+
+const projectId = process.env.BIGQUERY_PROJECT_ID;
+if (!projectId) {
+  throw new Error('BIGQUERY_PROJECT_ID no está definida en las variables de entorno.');
+}
 
 const bigquery = new BigQuery({
-  keyFilename: path.join(process.cwd(), 'credencialesbq.json'),
+  projectId,
+  credentials,
 });
 
 export async function POST(request: Request) {
   try {
     const { username, password } = await request.json();
 
+    // Nota: considera usar consultas parametrizadas para evitar inyección SQL.
     const userQuery = `
       SELECT user_id
-      FROM \`data-warehouse-311917.z_people.users\`
+      FROM \`${projectId}.z_people.users\`
       WHERE username = "${username}" AND password = "${password}"
     `;
 
@@ -22,8 +37,8 @@ export async function POST(request: Request) {
       const userId = userRows[0].user_id;
 
       const permissionsQuery = `
-        SELECT resource, concat(resource,'-',action) as action
-        FROM \`data-warehouse-311917.z_people.user_permissions\`
+        SELECT resource, CONCAT(resource, '-', action) as action
+        FROM \`${projectId}.z_people.user_permissions\`
         WHERE user_id = "${userId}"
         GROUP BY 1, 2
       `;
@@ -47,4 +62,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });
   }
 }
-

@@ -9,5 +9,9 @@ temp
 node_modules/
 .next/
 .env
+.env.local
 
+
+credenciales/
 credencialesbq.json
+test.js

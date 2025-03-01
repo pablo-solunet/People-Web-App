@@ -1,28 +1,45 @@
 import { BigQuery } from '@google-cloud/bigquery';
 import { GoogleAuth } from 'google-auth-library';
-import path from 'path';
 
-const projectId = 'data-warehouse-311917';
-const datasetId = 'z_people';
-const tableId = 'users';
+// Configuración mediante variables de entorno
+const projectId = process.env.BIGQUERY_PROJECT_ID;
+if (!projectId) {
+  throw new Error('BIGQUERY_PROJECT_ID no está definido en las variables de entorno.');
+}
 
+const datasetId = process.env.BIGQUERY_DATASET_ID || 'z_people';
+// Para la tabla de usuarios puedes usar una variable específica o el valor por defecto
+const tableId = process.env.BIGQUERY_USERS_TABLE_ID || 'users';
+
+const credentials = process.env.BIGQUERY_CREDENTIALS
+  ? JSON.parse(process.env.BIGQUERY_CREDENTIALS)
+  : null;
+if (!credentials) {
+  throw new Error('BIGQUERY_CREDENTIALS no está definido en las variables de entorno.');
+}
+
+// Configuración de autenticación y cliente de BigQuery usando las credenciales
 const auth = new GoogleAuth({
-  keyFilename: path.join(process.cwd(), 'credencialesbq.json'),
+  credentials,
   scopes: ['https://www.googleapis.com/auth/bigquery'],
 });
 
 const bigquery = new BigQuery({
-  keyFilename: path.join(process.cwd(), 'credencialesbq.json'),
+  projectId,
+  credentials,
 });
 
+// Función para generar username a partir del email
 function generateUsername(email: string): string {
   return email.split('@')[0];
 }
 
+// Función para obtener el ID de empleado y legajo desde Odoo
 async function getEmployeeId(email: string): Promise<{ employeeId: string | null; legajo: string | null }> {
+  // Se utiliza el projectId obtenido de la variable de entorno
   const query = `
     SELECT id, global_file
-    FROM \`data-warehouse-311917.Odoo.tbl_Employees\`
+    FROM \`${projectId}.Odoo.tbl_Employees\`
     WHERE work_email = "${email}"
     LIMIT 1
   `;
@@ -36,6 +53,7 @@ async function getEmployeeId(email: string): Promise<{ employeeId: string | null
   return { employeeId: null, legajo: null };
 }
 
+// Función para verificar si ya existe el usuario en la tabla de usuarios
 async function checkExistingUser(email: string): Promise<boolean> {
   const query = `
     SELECT COUNT(*) as count
@@ -44,25 +62,25 @@ async function checkExistingUser(email: string): Promise<boolean> {
   `;
 
   const [rows] = await bigquery.query({ query });
-
   return rows[0].count > 0;
 }
 
+// Función para insertar un nuevo usuario
 export async function insertUser(email: string, password: string) {
   try {
-    // Check if user already exists in the users table
+    // Verificar si el usuario ya existe
     const userExists = await checkExistingUser(email);
     if (userExists) {
       throw new Error('User with this email already exists');
     }
 
-    // Check if employee exists in Odoo
+    // Verificar si existe el empleado en Odoo
     const { employeeId, legajo } = await getEmployeeId(email);
     if (!employeeId) {
       throw new Error('No matching employee found in Odoo');
     }
 
-    // Generate username from email
+    // Generar el username a partir del email
     const username = generateUsername(email);
 
     const query = `
@@ -101,11 +119,9 @@ export async function insertUser(email: string, password: string) {
     });
 
     const data = await response.json();
-
     return { success: true, message: 'User created successfully' };
   } catch (error) {
     console.error('Error creating user:', error);
     throw error;
   }
 }
-
