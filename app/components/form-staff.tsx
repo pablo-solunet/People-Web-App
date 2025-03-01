@@ -68,21 +68,25 @@ export function StaffForm({ onSubmit, onReturn }: StaffFormProps) {
 
   const handleClear = () => {
     setFormData({
+      cliente: '',
+      canal: '',
+      diasLibres: '',
+      job_title: '',
       compania: '',
       pais: '',
       fechaIngreso: '',
       area: '',
       estado: 'Pendiente',
-      cargaHoraria: '5x9',
+      cargaHoraria: '5 x 9', // Asegúrate de mantener el mismo formato
       horarioIn: '09:00',
       horarioOut: '',
       jobDescription: '',
       observaciones: '',
       puesto: 'Analista',
       quantity: '1'
-    })
-    setCustomArea('')
-    setIsCustomPuesto(false)
+    });
+    setCustomArea('');
+    setIsCustomPuesto(false);
   }
 
   const handleInputChange = (field: string, value: string) => {

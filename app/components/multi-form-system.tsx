@@ -221,7 +221,7 @@ export function MultiFormSystem() {
           </TabsContent>
         )}
 
-        {user.permissions.includes('status') && (
+        {/* {user.permissions.includes('status') && (
           <TabsContent value="status">
             <h2 className="text-2xl font-bold mb-4">Status de Pedidos</h2>
             <StatusView
@@ -229,7 +229,16 @@ export function MultiFormSystem() {
               onReload={handleReloadStatus}
             />
           </TabsContent>
+        )} */}
+
+        {user.permissions.includes('status') && (
+          <TabsContent value="status">
+            <h2 className="text-2xl font-bold mb-4">Status de Pedidos</h2>
+            <StatusView />
+          </TabsContent>
         )}
+
+
         {user.permissions.includes('usuarios') && (
           <TabsContent value="usuarios">
             <h2 className="text-2xl font-bold mb-4">Administración de Usuarios</h2>
