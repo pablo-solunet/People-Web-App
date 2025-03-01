@@ -25,7 +25,13 @@ const auth = new GoogleAuth({
 export async function getAgentFormData(id?: string | null) {
   try {
     let query: string;
-    let queryParameters = [];
+    interface QueryParameter {
+      name: string;
+      parameterType: { type: string };
+      parameterValue: { value: string };
+    }
+    let queryParameters: QueryParameter[] = [];
+    
 
     if (id) {
       query = `
