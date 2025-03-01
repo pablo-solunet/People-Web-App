@@ -1,0 +1,13 @@
+# Logs
+logs
+*.log
+
+# Directorios temporales
+tmp
+temp
+
+node_modules/
+.next/
+.env
+
+credencialesbq.json
