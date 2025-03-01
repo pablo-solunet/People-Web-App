@@ -1,0 +1,242 @@
+PALETA DE COLORES
+https://v2.tailwindcss.com/docs/customizing-colors
+
+-------------------- Crear la tabla Users ---------------------------
+CREATE OR REPLACE TABLE `data-warehouse-311917.z_people.users`
+(
+  user_id STRING NOT NULL,
+  email STRING NOT NULL,
+  username STRING,
+  password STRING NOT NULL,
+  legajo STRING,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP(),
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP(),
+  is_active BOOL DEFAULT TRUE
+)
+PARTITION BY DATE(created_at)  -- Particionar por la fecha de creación
+CLUSTER BY user_id            -- Cluster por user_id para mejorar rendimiento en consultas
+OPTIONS(
+  description="Tabla de usuarios para el sistema de gestión de permisos",
+  labels=[("env", "production"), ("department", "it")]
+)
+AS
+SELECT
+  '99999' as user_id,
+  'djcelui@gmail.com' as email,
+  'admin' as username,
+  'Q4685769!!' as password,
+  'S0' as legajo,
+  CURRENT_TIMESTAMP() as created_at,
+  CURRENT_TIMESTAMP() as updated_at,
+  TRUE as is_active
+FROM
+  UNNEST(GENERATE_ARRAY(1, 1)) -- This creates one sample row, remove for an empty table
+;
+
+
+-- insert into `data-warehouse-311917.z_people.users`
+-- (user_id, email, username, password, legajo)
+-- values('99999', 'djcelui@gmail.com', 'admin', 'Q4685769!!','S0')
+
+-------------------- Crear la tabla Permissions ------------------------
+CREATE OR REPLACE TABLE `data-warehouse-311917.z_people.permissions`
+(
+  permission_id STRING NOT NULL,
+  resource STRING NOT NULL,
+  action STRING NOT NULL,
+  description STRING
+)
+OPTIONS(
+  description="Tabla de permisos",
+  labels=[("env", "production"), ("department", "it")]
+)
+AS
+WITH 
+--permissions: ['requerimiento', 'status', 'training', 'operaciones', 'usuarios', 'test']
+  resources AS (
+    SELECT 'requerimiento' AS resource UNION ALL
+    SELECT 'training' UNION ALL
+    SELECT 'manager' UNION ALL
+    SELECT 'status' UNION ALL
+    SELECT 'people' UNION ALL
+    SELECT 'usuarios' UNION ALL
+    SELECT 'operaciones' UNION ALL
+    SELECT 'test'
+  ),
+  actions AS (
+    SELECT 'view' AS action UNION ALL
+    SELECT 'edit' UNION ALL
+    SELECT 'create' UNION ALL
+    SELECT 'delete' UNION ALL
+    SELECT 'approve' UNION ALL
+    SELECT 'reject'
+  ),
+  combinations AS (
+    SELECT
+      ROW_NUMBER() OVER () + 19999 AS id, -- Genera IDs únicos desde 20000
+      resource,
+      action,
+      CONCAT('Permiso para ', action, ' ', resource) AS description
+    FROM resources
+    CROSS JOIN actions
+  )
+SELECT
+  CAST(id AS STRING) AS permission_id,
+  resource,
+  action,
+  description
+FROM combinations;
+
+
+
+-------------------- Crear la tabla User y Permissions table  ------------------------
+CREATE OR REPLACE TABLE `data-warehouse-311917.z_people.user_permissions`
+(
+  user_permission_id STRING NOT NULL,
+  user_id STRING NOT NULL,
+  permission_id STRING NOT NULL,
+  resource STRING NOT NULL,
+  action STRING NOT NULL
+)
+OPTIONS(
+  description="Tabla de usuarios con todos los permisos posibles",
+  labels=[("env", "production"), ("department", "it")]
+)
+AS
+WITH users AS (
+  SELECT '99999' AS user_id
+)
+SELECT
+  GENERATE_UUID() AS user_permission_id, -- Generar un ID único para cada asignación
+  u.user_id,
+  p.permission_id,
+  p.resource,
+  p.action
+FROM users AS u
+CROSS JOIN `data-warehouse-311917.z_people.permissions` AS p;
+
+
+-------------------- Crear la tabla Agent Forms  ------------------------
+CREATE TABLE IF NOT EXISTS `data-warehouse-311917.z_people.agent_form_data`
+(
+  id_reg STRING,
+  lote_id STRING,
+  requisition_id STRING,
+  created_by STRING,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP(),
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP(),
+  pais STRING,
+  pais_contrato STRING, 
+  fechaIngreso DATE,
+  cliente STRING,
+  canal STRING,
+  compania STRING,
+  horarioIn STRING,
+  horarioOut STRING,
+  job_title STRING,
+  jobDescription STRING,
+  puesto STRING,
+  observaciones STRING,
+  estado STRING,
+  cargaHoraria STRING,
+  lunes_in STRING,
+  lunes_out STRING,
+  martes_in STRING,
+  martes_out STRING,
+  miercoles_in STRING,
+  miercoles_out STRING,
+  jueves_in STRING,
+  jueves_out STRING,
+  viernes_in STRING,
+  viernes_out STRING,
+  sabado_in STRING,
+  sabado_out STRING,
+  domingo_in STRING,
+  domingo_out STRING,
+  area STRING,
+  legajo STRING
+)
+PARTITION BY DATE(created_at)
+CLUSTER BY lote_id, requisition_id;
+
+
+
+-------------------- Crear la tabla STAFF Forms  ------------------------
+CREATE TABLE IF NOT EXISTS `data-warehouse-311917.z_people.staff_form_data`
+(
+  id_reg STRING,
+  lote_id STRING,
+  requisition_id STRING,
+  created_by STRING,
+  created_at TIMESTAMP,
+  updated_at TIMESTAMP, CURRENT_TIMESTAMP()
+  pais STRING,
+  pais_contrato STRING,   //********************** CAMPO 
+  fechaIngreso DATE,
+  cliente STRING,
+  canal STRING,
+  compania STRING,
+  cargaHoraria STRING,
+  horarioIn STRING,
+  horarioOut STRING,
+  diasLibres INT64,
+  job_title STRING,
+  jobDescription STRING,
+  puesto STRING,
+  estado STRING,
+  observaciones STRING,
+  area STRING
+)
+PARTITION BY DATE(created_at)
+CLUSTER BY lote_id, requisition_id;
+
+
+
+
+
+
+
+
+
+
+-------------===== =====-------------
+-- Crear la tabla Users
+CREATE OR REPLACE TABLE `data-warehouse-311917.z_people.users`
+(
+  user_id STRING,  -- ID único para el usuario (clave primaria)
+  username STRING,
+  email STRING,
+  password STRING,
+  legajo STRING,
+  created_at TIMESTAMP,
+  updated_at TIMESTAMP,
+  is_active BOOL
+)
+OPTIONS(
+  description="Tabla de usuarios para el sistema de gestión de permisos",
+  labels=[("env", "production"), ("department", "it")]
+)
+AS
+SELECT
+  GENERATE_UUID() as user_id,
+  'admin' as username,
+  'admin@admin.com' as email,
+  'admin' as password,
+  'S0' as legajo,
+  CURRENT_TIMESTAMP() as created_at,
+  CURRENT_TIMESTAMP() as updated_at,
+  TRUE as is_active
+FROM
+  UNNEST(GENERATE_ARRAY(1, 1)) -- This creates one sample row, remove for an empty table
+
+-- Crear una vista materializada para consultas frecuentes
+CREATE OR REPLACE MATERIALIZED VIEW `data-warehouse-311917.z_people.ActiveUsersView`
+OPTIONS(
+  description="Vista materializada de usuarios activos",
+  enable_refresh=TRUE,
+  refresh_interval_minutes=60
+)
+AS
+SELECT user_id, email, username
+FROM `data-warehouse-311917.z_people.users`
+WHERE is_active = TRUE

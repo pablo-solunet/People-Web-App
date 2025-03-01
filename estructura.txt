@@ -1,0 +1,25 @@
+my-app/
+├── app/
+│   ├── api/
+│   │   ├── auth/
+│   │   │   └── route.ts
+│   │   └── [otras rutas API]
+│   ├── (auth)/
+│   │   ├── login/
+│   │   │   └── page.tsx
+│   │   └── layout.tsx
+│   ├── (protected)/
+│   │   ├── dashboard/
+│   │   │   └── page.tsx
+│   │   ├── [otras rutas protegidas]
+│   │   └── layout.tsx
+│   ├── layout.tsx
+│   └── page.tsx
+├── components/
+│   ├── LoginForm.tsx
+│   └── [otros componentes]
+├── lib/
+│   ├── db.ts
+│   └── auth.ts
+├── middleware.ts
+└── [otros archivos de configuración]
