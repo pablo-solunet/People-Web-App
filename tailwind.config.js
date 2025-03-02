@@ -10,8 +10,18 @@ module.exports = {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: {
+        DEFAULT: "2rem",
+        sm: "1.5rem",  // para pantallas pequeñas
+        md: "2rem",
+        lg: "2rem",
+        xl: "2rem",
+      },
       screens: {
+        sm: "640px",
+        md: "768px",
+        lg: "1024px",
+        xl: "1280px",
         "2xl": "1400px",
       },
     },
@@ -62,7 +72,30 @@ module.exports = {
           warning: "#FBBF24",
           error: "#EF4444",
         },
-        // Paleta Blue para modo claro
+        yellow: {
+          50:  "#FFFBEB",
+          100: "#FEF3C7",
+          200: "#FDE68A",
+          300: "#FCD34D",
+          400: "#FBBF24",
+          500: "#F59E0B",
+          600: "#D97706",
+          700: "#B45309",
+          800: "#92400E",
+          900: "#78350F",
+        },
+        "yellow-dark": {
+          50:  "#FFFBEB",
+          100: "#FEF3C7",
+          200: "#FDE68A",
+          300: "#FCD34D",
+          400: "#FBBF24",
+          500: "#F59E0B",
+          600: "#D97706",
+          700: "#B45309",
+          800: "#92400E",
+          900: "#78350F",
+        },
         blue: {
           50: "#EFF6FF",
           100: "#DBEAFE",
@@ -130,6 +163,10 @@ module.exports = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      maxWidth: {
+        // Agregamos un tamaño máximo para los mensajes
+        'mensaje': '28rem',  // ajusta este valor según lo que necesites
       },
       keyframes: {
         "accordion-down": {

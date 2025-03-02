@@ -1,14 +1,28 @@
-import './globals.css'
-import { Inter } from 'next/font/google'
+import type React from "react"
+import "./globals.css"
+import { Outfit, Playfair_Display, Montserrat } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { ToastProvider } from "@/components/ui/toast"
 
-const inter = Inter({ subsets: ['latin'] })
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+})
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+})
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  variable: "--font-montserrat",
+})
 
 export const metadata = {
-  title: 'People App',
-  description: 'A comprehensive form system built with Next.js',
+  title: "People App",
+  description: "Sistema integral de gestión de personal y requerimientos",
 }
 
 export default function RootLayout({
@@ -17,8 +31,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="es" suppressHydrationWarning>
+      <body className={`${outfit.variable} ${playfair.variable} ${montserrat.variable} font-sans`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <ToastProvider>
             {children}
