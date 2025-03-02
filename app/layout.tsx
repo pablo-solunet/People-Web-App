@@ -22,7 +22,7 @@ const montserrat = Montserrat({
 
 export const metadata = {
   title: "People App",
-  description: "Sistema integral de gestión de personal y requerimientos",
+  description: "Sistema de gestión de requerimientos",
 }
 
 export default function RootLayout({
@@ -31,9 +31,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es" suppressHydrationWarning>
-      <body className={`${outfit.variable} ${playfair.variable} ${montserrat.variable} font-sans`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <html lang="es" suppressHydrationWarning className="dark">
+      <body
+        className={`${outfit.variable} ${playfair.variable} ${montserrat.variable} font-sans bg-background text-foreground`}
+      >
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <ToastProvider>
             {children}
             <Toaster />
