@@ -31,9 +31,41 @@ type UserType = "Agente" | "Staff"
 
 interface TempRecord {
   id_reg: string
-  lote_id?: string
+  lote_id: string
   requisition_id: string
   created_by: string
+  created_at: string
+  updated_at: string
+  pais: string
+  fechaIngreso: string
+  cliente: string
+  canal: string
+  compania: string
+  cargaHoraria: string
+  horarioIn: string
+  horarioOut: string
+  job_title: string
+  jobDescription: string
+  puesto: string
+
+  lunes_in: string
+  lunes_out: string
+  martes_in: string
+  martes_out: string
+  miercoles_in: string
+  miercoles_out: string
+  jueves_in: string
+  jueves_out: string
+  viernes_in: string
+  viernes_out: string
+  sabado_in: string
+  sabado_out: string
+  domingo_in: string
+  domingo_out: string
+
+  estado: string
+  observaciones: string
+  area: string
   [key: string]: string | undefined
 }
 
@@ -63,10 +95,42 @@ export function MultiFormSystem() {
       lote_id,
       requisition_id,
       created_by: user?.username || "Usuario Desconocido",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      pais: data.pais || "",
+      fechaIngreso: data.fechaIngreso || "",
+      cliente: data.cliente || "",
+      canal: data.canal || "",
+      compania: data.compania || "",
+      cargaHoraria: data.cargaHoraria || "",
+      horarioIn: data.horarioIn || "",
+      horarioOut: data.horarioOut || "",
+      job_title: data.job_title || "",
+      jobDescription: data.jobDescription || "",
+      puesto: data.puesto || "",
+
+      lunes_in: data.lunes_in || "",
+      lunes_out: data.lunes_out || "",
+      martes_in: data.martes_in || "",
+      martes_out: data.martes_out || "",
+      miercoles_in: data.miercoles_in || "",
+      miercoles_out: data.miercoles_out || "",
+      jueves_in: data.jueves_in || "",
+      jueves_out: data.jueves_out || "",
+      viernes_in: data.viernes_in || "",
+      viernes_out: data.viernes_out || "",
+      sabado_in: data.sabado_in || "",
+      sabado_out: data.sabado_out || "",
+      domingo_in: data.domingo_in || "",
+      domingo_out: data.domingo_out || "",
+
+      estado: data.estado || "",
+      observaciones: data.observaciones || "",
+      area: data.area || "",
       ...data,
     }))
 
-    setTempRecords((prev) => [...prev, ...newRecords])
+    setTempRecords(prev => [...prev, ...newRecords])
   }
 
   const handleDelete = (id_reg: string) => {
