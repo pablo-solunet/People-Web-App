@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PreForm } from "./pre-form"
 import { AgentForm } from "./form-agent"
@@ -85,6 +85,7 @@ export function MultiFormSystem() {
   const [remoteRecords, setRemoteRecords] = useState([])
   const [activeTab, setActiveTab] = useState("requerimiento")
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [authToken, setAuthToken] = useState<string | null>(null)
 
   const handleFormSubmit = (data: Record<string, string>) => {
     const quantity = Number.parseInt(data.quantity) || 1
@@ -130,7 +131,7 @@ export function MultiFormSystem() {
       ...data,
     }))
 
-    setTempRecords(prev => [...prev, ...newRecords])
+    setTempRecords((prev) => [...prev, ...newRecords])
   }
 
   const handleDelete = (id_reg: string) => {
@@ -147,7 +148,7 @@ export function MultiFormSystem() {
       lote_id: newIds[0].lote_id, // All records get the same lote_id
     }))
 
-    console.log("Confirming all records:", updatedRecords)
+    // console.log("Confirming all records:", updatedRecords)
 
     // Aquí deberías enviar los registros confirmados a tu backend o realizar la acción necesaria
 
@@ -168,13 +169,17 @@ export function MultiFormSystem() {
     setTheme(theme === "dark" ? "light" : "dark")
   }
 
-  const handleLogin = (username: string, userId: string, permissions: string[], actions: string[]) => {
+  const handleLogin = (username: string, userId: string, permissions: string[], actions: string[], token: string) => {
     setUser({
       username,
       userId,
       permissions,
       actions,
     })
+    setAuthToken(token)
+
+    // Store the token in localStorage
+    localStorage.setItem("authToken", token)
 
     // Establecer la primera pestaña disponible como activa
     if (permissions.length > 0) {
@@ -184,13 +189,19 @@ export function MultiFormSystem() {
 
   const handleLogout = () => {
     setUser(null)
+    setAuthToken(null)
+    localStorage.removeItem("authToken")
   }
 
   const handleReloadStatus = () => {
     // Simulate fetching data
     setIsLoading(true)
     setTimeout(() => {
-      fetch("/api/agent-form")
+      fetch("/api/agent-form", {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      })
         .then((response) => {
           if (!response.ok) {
             throw new Error("Network response was not ok")
@@ -219,6 +230,38 @@ export function MultiFormSystem() {
 
   const hasActionPermission = (action: string) => {
     return user?.actions.includes(action) || false
+  }
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem("authToken")
+    if (storedToken) {
+      // Validate the token with the server
+      validateToken(storedToken)
+    }
+  }, [])
+
+  const validateToken = async (token: string) => {
+    try {
+      const response = await fetch("/api/auth/validate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ token }),
+      })
+
+      if (response.ok) {
+        const userData = await response.json()
+        handleLogin(userData.username, userData.userId, userData.permissions, userData.actions, token)
+      } else {
+        // If token is invalid, remove it from localStorage
+        localStorage.removeItem("authToken")
+      }
+    } catch (error) {
+      console.error("Error validating token:", error)
+      localStorage.removeItem("authToken")
+    }
   }
 
   if (!user) {

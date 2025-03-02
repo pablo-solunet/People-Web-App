@@ -49,7 +49,7 @@ export async function updateAgentFormData(data: any) {
       WHERE id_reg = "${id_reg}"
     `;
 
-    console.log('---------- query:', query);
+    // console.log('---------- query:', query);
 
     const url = `https://bigquery.googleapis.com/bigquery/v2/projects/${projectId}/queries`;
 

@@ -31,8 +31,8 @@ export async function insertAgentFormData(data: any[]) {
       Authorization: `Bearer ${accessToken.token}`,
     };
 
-    console.log("DATOS RECIBIDOS");
-    console.log(data);
+    // console.log("DATOS RECIBIDOS");
+    // console.log(data);
 
     const url = `https://bigquery.googleapis.com/bigquery/v2/projects/${projectId}/queries`;
 

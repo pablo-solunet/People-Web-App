@@ -27,7 +27,7 @@ export async function updateUser(
   try {
     const { username, legajo, is_active } = body;
 
-    console.log("------------ Received Data:", body);
+    // console.log("------------ Received Data:", body);
 
     const query = `
       UPDATE \`${projectId}.${datasetId}.${tableId}\`
@@ -35,7 +35,7 @@ export async function updateUser(
       WHERE user_id = '${userId}'
     `;
 
-    console.log("------------ query:", query);
+    // console.log("------------ query:", query);
 
     const url = `https://bigquery.googleapis.com/bigquery/v2/projects/${projectId}/queries`;
     const client = await auth.getClient();

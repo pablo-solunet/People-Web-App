@@ -49,7 +49,7 @@ export async function getAgentFormData(id?: string | null) {
       `;
     }
 
-    console.log("------- query:", query);
+    // console.log("------- query:", query);
 
     const url = `https://bigquery.googleapis.com/bigquery/v2/projects/${projectId}/queries`;
 
@@ -76,7 +76,7 @@ export async function getAgentFormData(id?: string | null) {
     
     const data = await response.json();
 
-    console.log("------- data:", JSON.stringify(data));
+    // console.log("------- data:", JSON.stringify(data));
 
     return { success: true, data: data.rows };
   } catch (error) {

@@ -1,5 +1,6 @@
 import { BigQuery } from '@google-cloud/bigquery';
 import { NextResponse } from 'next/server';
+import crypto from "crypto"
 
 // Carga las credenciales desde la variable de entorno (almacena el JSON como string)
 const credentials = process.env.BIGQUERY_CREDENTIALS
@@ -36,6 +37,21 @@ export async function POST(request: Request) {
     if (userRows.length > 0) {
       const userId = userRows[0].user_id;
 
+      // Generar un token
+      const token = crypto.randomBytes(64).toString("hex")
+
+      // Guardar el token en la base de datos
+      const updateTokenQuery = `
+        UPDATE \`${projectId}.z_people.users\`
+        SET token = "${token}"
+        WHERE user_id = "${userId}"
+      `
+
+      // console.log("---------------------------------");
+      // console.log(updateTokenQuery);
+
+      await bigquery.query({ query: updateTokenQuery })
+
       const permissionsQuery = `
         SELECT resource, CONCAT(resource, '-', action) as action
         FROM \`${projectId}.z_people.user_permissions\`
@@ -43,19 +59,22 @@ export async function POST(request: Request) {
         GROUP BY 1, 2
       `;
 
-      console.log(permissionsQuery);
+      // console.log(permissionsQuery);
 
       const [permissionsRows] = await bigquery.query({ query: permissionsQuery });
       
       const permissions = Array.from(new Set(permissionsRows.map((row: any) => row.resource)));
       const actions = Array.from(new Set(permissionsRows.map((row: any) => row.action)));
 
-      console.log('Permissions:', permissions);
-      console.log('Actions:', actions);
+      // console.log('Permissions:', permissions);
+      // console.log('Actions:', actions);
 
-      return NextResponse.json({ success: true, userId, username, permissions, actions });
-    } else {
-      return NextResponse.json({ error: 'Invalid username or password' }, { status: 401 });
+    //   return NextResponse.json({ success: true, userId, username, permissions, actions });
+    // } else {
+    //   return NextResponse.json({ error: 'Invalid username or password' }, { status: 401 });
+      return NextResponse.json({ success: true, userId, username, permissions, actions, token })
+      } else {
+      return NextResponse.json({ error: "Invalid username or password" }, { status: 401 })
     }
   } catch (error) {
     console.error('Error during authentication:', error);

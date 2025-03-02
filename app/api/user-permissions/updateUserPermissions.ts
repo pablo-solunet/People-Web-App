@@ -88,7 +88,7 @@ export async function updateUserPermissions(
           .join(',')}
       `;
 
-      console.log("----------- insertQuery:", insertQuery);
+      // console.log("----------- insertQuery:", insertQuery);
 
       const insertQueryParameters = permissionsToAdd.flatMap((p, index) => [
         { name: `user_permission_id${index}`, parameterType: { type: 'STRING' }, parameterValue: { value: p.user_permission_id } },
@@ -98,7 +98,7 @@ export async function updateUserPermissions(
         { name: `action${index}`, parameterType: { type: 'STRING' }, parameterValue: { value: p.action } },
       ]);
 
-      console.log("----------- insertQueryParameters:", insertQueryParameters);
+      // console.log("----------- insertQueryParameters:", insertQueryParameters);
 
       const insertRequestBody = {
         query: insertQuery,
