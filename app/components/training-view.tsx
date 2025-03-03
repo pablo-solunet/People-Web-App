@@ -570,7 +570,7 @@ export function TrainingView({ hasActionPermission }: TrainingViewProps) {
                               handleApproveLote(loteId)
                             }}
                             disabled={!hasActionPermission("training-approve")}
-                            className="bg-green-500 hover:bg-green-600 text-white"
+                            className="bg-button-approve-bg hover:bg-button-approve-hover text-button-approve-text dark:bg-button-dark-approve-bg dark:hover:bg-button-dark-approve-hover dark:text-button-dark-approve-text"
                           >
                             Aprobar Lote
                           </Button>
@@ -582,7 +582,7 @@ export function TrainingView({ hasActionPermission }: TrainingViewProps) {
                               handleRejectLote(loteId)
                             }}
                             disabled={!hasActionPermission("training-reject")}
-                            className="bg-red-500 hover:bg-red-600 text-white"
+                            className="bg-button-reject-bg hover:bg-button-reject-hover text-button-reject-text dark:bg-button-dark-reject-bg dark:hover:bg-button-dark-reject-hover dark:text-button-dark-reject-text"
                           >
                             Rechazar Lote
                           </Button>
@@ -651,7 +651,7 @@ export function TrainingView({ hasActionPermission }: TrainingViewProps) {
                                           disabled={
                                             record.estado === "Aprobado" || !hasActionPermission("training-approve")
                                           }
-                                          className="bg-green-500 hover:bg-green-600 text-white"
+                                          className="bg-button-approve-bg hover:bg-button-approve-hover text-button-approve-text dark:bg-button-dark-approve-bg dark:hover:bg-button-dark-approve-hover dark:text-button-dark-approve-text"
                                         >
                                           Aprobar
                                         </Button>
@@ -662,7 +662,7 @@ export function TrainingView({ hasActionPermission }: TrainingViewProps) {
                                           disabled={
                                             record.estado === "Rechazado" || !hasActionPermission("training-reject")
                                           }
-                                          className="bg-red-500 hover:bg-red-600 text-white"
+                                          className="bg-button-reject-bg hover:bg-button-reject-hover text-button-reject-text dark:bg-button-dark-reject-bg dark:hover:bg-button-dark-reject-hover dark:text-button-dark-reject-text"
                                         >
                                           Rechazar
                                         </Button>

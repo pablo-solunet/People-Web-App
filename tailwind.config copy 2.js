@@ -158,53 +158,6 @@ module.exports = {
           finalizado: "#d1fae5",       // fondo verde pastel para 'Finalizado' en modo claro
           finalizadoDark: "#2f855a",   // tono verde atenuado para 'Finalizado' en modo oscuro
         },
-        // Colores suaves para botones
-         button: {
-          // Colores para modo claro
-          approve: {
-            bg: "#d1fae5", // Verde pastel suave
-            hover: "#a7f3d0", // Verde pastel más intenso al hover
-            text: "#065f46", // Texto verde oscuro para contraste
-          },
-          reject: {
-            bg: "#fee2e2", // Rojo pastel suave
-            hover: "#fecaca", // Rojo pastel más intenso al hover
-            text: "#7f1d1d", // Texto rojo oscuro para contraste
-          },
-          search: {
-            bg: "#fef3c7", // Amarillo pastel suave
-            hover: "#fde68a", // Amarillo pastel más intenso al hover
-            text: "#92400e", // Texto ámbar oscuro para contraste
-          },
-          confirm: {
-            bg: "#dbeafe", // Azul pastel suave
-            hover: "#bfdbfe", // Azul pastel más intenso al hover
-            text: "#1e40af", // Texto azul oscuro para contraste
-          },
-          // Colores para modo oscuro
-          dark: {
-            approve: {
-              bg: "#065f46", // Verde oscuro suave
-              hover: "#047857", // Verde oscuro más intenso al hover
-              text: "#ecfdf5", // Texto verde claro para contraste
-            },
-            reject: {
-              bg: "#7f1d1d", // Rojo oscuro suave
-              hover: "#991b1b", // Rojo oscuro más intenso al hover
-              text: "#fee2e2", // Texto rojo claro para contraste
-            },
-            search: {
-              bg: "#92400e", // Ámbar oscuro suave
-              hover: "#b45309", // Ámbar oscuro más intenso al hover
-              text: "#fef3c7", // Texto amarillo claro para contraste
-            },
-            confirm: {
-              bg: "#1e40af", // Azul oscuro suave
-              hover: "#1e3a8a", // Azul oscuro más intenso al hover
-              text: "#dbeafe", // Texto azul claro para contraste
-            },
-          },
-        },
       },
       borderRadius: {
         lg: "var(--radius)",

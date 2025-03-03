@@ -600,7 +600,7 @@ export function PeopleView({ hasActionPermission }: PeopleViewProps) {
                                           size="sm"
                                           onClick={() => handleEnbusqueda(record.id_reg)}
                                           disabled={record.estado === "EnBusqueda"}
-                                          className="bg-green-500 hover:bg-green-600"
+                                          className="bg-button-search-bg hover:bg-button-search-hover text-button-search-text dark:bg-button-dark-search-bg dark:hover:bg-button-dark-search-hover dark:text-button-dark-search-text"
                                         >
                                           En Busqueda
                                         </Button>
@@ -612,7 +612,7 @@ export function PeopleView({ hasActionPermission }: PeopleViewProps) {
                                             setIsConfirmPopupOpen(true)
                                           }}
                                           disabled={record.estado === "Finalizado"}
-                                          className="bg-blue-500 hover:bg-blue-600"
+                                          className="bg-button-approve-bg hover:bg-button-approve-hover text-button-approve-text dark:bg-button-dark-approve-bg dark:hover:bg-button-dark-approve-hover dark:text-button-dark-approve-text"
                                         >
                                           Confirmado
                                         </Button>
