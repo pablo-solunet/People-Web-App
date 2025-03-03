@@ -1,31 +1,12 @@
-import { BigQuery } from '@google-cloud/bigquery';
+import { bigquery, projectId } from "@/lib/bigQueryConfig"
 import { NextResponse } from 'next/server';
 import crypto from "crypto"
-
-// Carga las credenciales desde la variable de entorno (almacena el JSON como string)
-const credentials = process.env.BIGQUERY_CREDENTIALS
-  ? JSON.parse(process.env.BIGQUERY_CREDENTIALS)
-  : null;
-
-if (!credentials) {
-  throw new Error('BIGQUERY_CREDENTIALS no está definida en las variables de entorno.');
-}
-
-const projectId = process.env.BIGQUERY_PROJECT_ID;
-if (!projectId) {
-  throw new Error('BIGQUERY_PROJECT_ID no está definida en las variables de entorno.');
-}
-
-const bigquery = new BigQuery({
-  projectId,
-  credentials,
-});
 
 export async function POST(request: Request) {
   try {
     const { username, password } = await request.json();
 
-    // Nota: considera usar consultas parametrizadas para evitar inyección SQL.
+    // evitar inyección SQL.
     const userQuery = `
       SELECT user_id
       FROM \`${projectId}.z_people.users\`
@@ -38,19 +19,15 @@ export async function POST(request: Request) {
       const userId = userRows[0].user_id;
 
       // Generar un token
-      const token = crypto.randomBytes(64).toString("hex")
+      // const token = crypto.randomBytes(64).toString("hex")
 
       // Guardar el token en la base de datos
-      const updateTokenQuery = `
-        UPDATE \`${projectId}.z_people.users\`
-        SET token = "${token}"
-        WHERE user_id = "${userId}"
-      `
-
-      // console.log("---------------------------------");
-      // console.log(updateTokenQuery);
-
-      await bigquery.query({ query: updateTokenQuery })
+      // const updateTokenQuery = `
+      //   UPDATE \`${projectId}.z_people.users\`
+      //   SET token = "${token}"
+      //   WHERE user_id = "${userId}"
+      // `
+      // await bigquery.query({ query: updateTokenQuery })
 
       const permissionsQuery = `
         SELECT resource, CONCAT(resource, '-', action) as action
@@ -59,20 +36,12 @@ export async function POST(request: Request) {
         GROUP BY 1, 2
       `;
 
-      // console.log(permissionsQuery);
-
       const [permissionsRows] = await bigquery.query({ query: permissionsQuery });
-      
       const permissions = Array.from(new Set(permissionsRows.map((row: any) => row.resource)));
       const actions = Array.from(new Set(permissionsRows.map((row: any) => row.action)));
 
-      // console.log('Permissions:', permissions);
-      // console.log('Actions:', actions);
-
-    //   return NextResponse.json({ success: true, userId, username, permissions, actions });
-    // } else {
-    //   return NextResponse.json({ error: 'Invalid username or password' }, { status: 401 });
-      return NextResponse.json({ success: true, userId, username, permissions, actions, token })
+      // return NextResponse.json({ success: true, userId, username, permissions, actions, token })
+      return NextResponse.json({ success: true, userId, username, permissions, actions })
       } else {
       return NextResponse.json({ error: "Invalid username or password" }, { status: 401 })
     }

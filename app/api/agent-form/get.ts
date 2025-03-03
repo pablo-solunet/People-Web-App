@@ -1,26 +1,4 @@
-import { GoogleAuth } from 'google-auth-library';
-
-// Se leen las configuraciones desde las variables de entorno
-const projectId = process.env.BIGQUERY_PROJECT_ID;
-if (!projectId) {
-  throw new Error('BIGQUERY_PROJECT_ID no está definido en las variables de entorno.');
-}
-
-const datasetId = process.env.BIGQUERY_DATASET_ID || 'z_people';
-const tableId = process.env.BIGQUERY_TABLE_ID || 'agent_form_data';
-
-const credentials = process.env.BIGQUERY_CREDENTIALS
-  ? JSON.parse(process.env.BIGQUERY_CREDENTIALS)
-  : null;
-if (!credentials) {
-  throw new Error('BIGQUERY_CREDENTIALS no está definido en las variables de entorno.');
-}
-
-// Configuramos GoogleAuth usando las credenciales proporcionadas
-const auth = new GoogleAuth({
-  credentials,
-  scopes: ['https://www.googleapis.com/auth/bigquery'],
-});
+import { projectId, datasetId, tableId, auth } from "@/lib/bigQueryConfig"
 
 export async function getAgentFormData(id?: string | null) {
   try {
@@ -49,13 +27,10 @@ export async function getAgentFormData(id?: string | null) {
       `;
     }
 
-    // console.log("------- query:", query);
-
     const url = `https://bigquery.googleapis.com/bigquery/v2/projects/${projectId}/queries`;
-
     const client = await auth.getClient();
     const accessToken = await client.getAccessToken();
-
+    
     const headers = {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken.token}`,
@@ -75,8 +50,6 @@ export async function getAgentFormData(id?: string | null) {
     });
     
     const data = await response.json();
-
-    // console.log("------- data:", JSON.stringify(data));
 
     return { success: true, data: data.rows };
   } catch (error) {

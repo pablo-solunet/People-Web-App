@@ -1,34 +1,11 @@
-import { GoogleAuth } from 'google-auth-library';
-
-// Se leen las configuraciones desde variables de entorno
-const projectId = process.env.BIGQUERY_PROJECT_ID;
-if (!projectId) {
-  throw new Error('BIGQUERY_PROJECT_ID no está definido en las variables de entorno.');
-}
-
-const datasetId = process.env.BIGQUERY_DATASET_ID || 'z_people';
-const tableId = process.env.BIGQUERY_TABLE_ID || 'agent_form_data';
-
-const credentials = process.env.BIGQUERY_CREDENTIALS
-  ? JSON.parse(process.env.BIGQUERY_CREDENTIALS)
-  : null;
-if (!credentials) {
-  throw new Error('BIGQUERY_CREDENTIALS no está definido en las variables de entorno.');
-}
-
-// Configuración de autenticación usando las credenciales obtenidas
-const auth = new GoogleAuth({
-  credentials,
-  scopes: ['https://www.googleapis.com/auth/bigquery'],
-});
+import { projectId, datasetId, tableId, auth } from "@/lib/bigQueryConfig"
 
 export async function updateAgentFormData(data: any) {
   try {
     // Extraer variables relevantes del objeto recibido
     const { isLote, lote_id, id_reg, estado, area, legajo, observaciones } = data;
 
-    // Construcción de la consulta de actualización; ten en cuenta que se están insertando valores directamente.
-    // Es recomendable parametrizar estos valores para evitar inyección SQL.
+    // parametrizar estos valores para evitar inyección SQL.
     const query = `
       UPDATE \`${projectId}.${datasetId}.${tableId}\`
       SET 
@@ -49,10 +26,8 @@ export async function updateAgentFormData(data: any) {
       WHERE id_reg = "${id_reg}"
     `;
 
-    // console.log('---------- query:', query);
 
     const url = `https://bigquery.googleapis.com/bigquery/v2/projects/${projectId}/queries`;
-
     const client = await auth.getClient();
     const accessToken = await client.getAccessToken();
 
@@ -61,8 +36,7 @@ export async function updateAgentFormData(data: any) {
       Authorization: `Bearer ${accessToken.token}`,
     };
 
-    // Ejemplo de queryParameters; aunque en esta consulta se inyectan los valores directamente,
-    // se mantiene este bloque para ilustrar cómo podrías parametrizar otros casos.
+    // se mantiene este bloque
     const requestBody = {
       query: query,
       useLegacySql: false,

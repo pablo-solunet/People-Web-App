@@ -85,7 +85,7 @@ export function MultiFormSystem() {
   const [remoteRecords, setRemoteRecords] = useState([])
   const [activeTab, setActiveTab] = useState("requerimiento")
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [authToken, setAuthToken] = useState<string | null>(null)
+  // const [authToken, setAuthToken] = useState<string | null>(null)
 
   const handleFormSubmit = (data: Record<string, string>) => {
     const quantity = Number.parseInt(data.quantity) || 1
@@ -170,100 +170,146 @@ export function MultiFormSystem() {
     setTheme(theme === "light" ? "dark" : "light")
   }
 
-  const handleLogin = (username: string, userId: string, permissions: string[], actions: string[], token: string) => {
+  const handleLogin = (username: string, userId: string, permissions: string[], actions: string[]) => {
     setUser({
       username,
       userId,
       permissions,
-      actions,
-    })
-    setAuthToken(token)
-
-    // Store the token in localStorage
-    localStorage.setItem("authToken", token)
-
-    // Establecer la primera pestaña disponible como activa
+      actions
+    });
+    console.log('User logged in:', { username, userId, permissions, actions });
     if (permissions.length > 0) {
-      setActiveTab(permissions[0])
+          setActiveTab(permissions[0])
     }
   }
+  // const handleLogin = (username: string, userId: string, permissions: string[], actions: string[], token: string) => {
+  // const handleLogin = (username: string, userId: string, permissions: string[], actions: string[]) => {
+  //   setUser({
+  //     username,
+  //     userId,
+  //     permissions,
+  //     actions,
+  //   })
+  //   // setAuthToken(token)
+
+  //   // Store the token in localStorage
+  //   // localStorage.setItem("authToken", token)
+
+  //   // Establecer la primera pestaña disponible como activa
+  //   if (permissions.length > 0) {
+  //     setActiveTab(permissions[0])
+  //   }
+  // }
 
   const handleLogout = () => {
-    setUser(null)
-    setAuthToken(null)
-    localStorage.removeItem("authToken")
+    setUser(null);
+    localStorage.removeItem('user');
   }
 
+  // const handleLogout = () => {
+  //   setUser(null)
+  //   // setAuthToken(null)
+  //   // localStorage.removeItem("authToken")
+  // }
   const handleReloadStatus = () => {
     // Simulate fetching data
-    setIsLoading(true)
+    setIsLoading(true);
     setTimeout(() => {
-      fetch("/api/agent-form", {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      })
-        .then((response) => {
+      fetch('/api/agent-form')
+        .then(response => {
           if (!response.ok) {
-            throw new Error("Network response was not ok")
+            throw new Error('Network response was not ok');
           }
-          return response.json()
+          return response.json();
         })
-        .then((data) => {
-          setRemoteRecords(
-            data.data.map((item: any) => {
-              const newObj: any = {}
-              item.f.forEach((field: any) => {
-                newObj[field.name] = field.v
-              })
-              return newObj
-            }),
-          )
+        .then(data => {
+          setRemoteRecords(data.data.map((item: any) => {
+            const newObj: any = {};
+            item.f.forEach((field: any) => {
+              newObj[field.name] = field.v;
+            });
+            return newObj;
+          }));
         })
-        .catch((error) => {
-          console.error("Error fetching data:", error)
+        .catch(error => {
+          console.error('Error fetching data:', error);
         })
         .finally(() => {
-          setIsLoading(false)
-        })
-    }, 500)
+          setIsLoading(false);
+        });
+    }, 500); // Simulate a 500ms delay
   }
+
+  // const handleReloadStatus = () => {
+  //   // Simulate fetching data
+  //   setIsLoading(true)
+  //   setTimeout(() => {
+  //     fetch("/api/agent-form", {
+  //       headers: {
+  //         Authorization: `Bearer ${authToken}`,
+  //       },
+  //     })
+  //       .then((response) => {
+  //         if (!response.ok) {
+  //           throw new Error("Network response was not ok")
+  //         }
+  //         return response.json()
+  //       })
+  //       .then((data) => {
+  //         setRemoteRecords(
+  //           data.data.map((item: any) => {
+  //             const newObj: any = {}
+  //             item.f.forEach((field: any) => {
+  //               newObj[field.name] = field.v
+  //             })
+  //             return newObj
+  //           }),
+  //         )
+  //       })
+  //       .catch((error) => {
+  //         console.error("Error fetching data:", error)
+  //       })
+  //       .finally(() => {
+  //         setIsLoading(false)
+  //       })
+  //   }, 500)
+  // }
 
   const hasActionPermission = (action: string) => {
     return user?.actions.includes(action) || false
   }
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem("authToken")
-    if (storedToken) {
-      // Validate the token with the server
-      validateToken(storedToken)
-    }
-  }, [])
+  // useEffect(() => {
+  //   const storedToken = localStorage.getItem("authToken")
+  //   if (storedToken) {
+  //     // Validate the token with the server
+  //     validateToken(storedToken)
+  //   }
+  // }, [])
 
-  const validateToken = async (token: string) => {
-    try {
-      const response = await fetch("/api/auth/validate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ token }),
-      })
+  // const validateToken = async (token: string) => {
+  //   try {
+  //     const response = await fetch("/api/auth/validate", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //       body: JSON.stringify({ token }),
+  //     })
 
-      if (response.ok) {
-        const userData = await response.json()
-        handleLogin(userData.username, userData.userId, userData.permissions, userData.actions, token)
-      } else {
-        // If token is invalid, remove it from localStorage
-        localStorage.removeItem("authToken")
-      }
-    } catch (error) {
-      console.error("Error validating token:", error)
-      localStorage.removeItem("authToken")
-    }
-  }
+  //     if (response.ok) {
+  //       const userData = await response.json()
+  //       handleLogin(userData.username, userData.userId, userData.permissions, userData.actions, token)
+  //     } else {
+  //       // If token is invalid, remove it from localStorage
+  //       localStorage.removeItem("authToken")
+  //     }
+  //   } catch (error) {
+  //     console.error("Error validating token:", error)
+  //     localStorage.removeItem("authToken")
+  //   }
+  // }
 
   if (!user) {
     return (

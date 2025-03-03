@@ -10,7 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface LoginProps {
-  onLogin: (username: string, userId: string, permissions: string[], actions: string[], token: string) => void
+  // onLogin: (username: string, userId: string, permissions: string[], actions: string[], token: string) => void
+  onLogin: (username: string, userId: string, permissions: string[], actions: string[]) => void
 }
 
 export function Login({ onLogin }: LoginProps) {
@@ -34,10 +35,12 @@ export function Login({ onLogin }: LoginProps) {
         throw new Error(errorData.error || "Authentication failed")
       }
 
-      const { userId, permissions, actions, token } = await response.json()
+      // const { userId, permissions, actions, token } = await response.json()
+      const { userId, permissions, actions} = await response.json()
 
       // Call the onLogin function with the received data, including the token
-      onLogin(username, userId, permissions, actions, token)
+      // onLogin(username, userId, permissions, actions, token)
+      onLogin(username, userId, permissions, actions)
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred during login.")
     }

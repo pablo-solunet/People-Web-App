@@ -1,27 +1,4 @@
-import { GoogleAuth } from 'google-auth-library';
-
-// Se leen las configuraciones desde variables de entorno
-const projectId = process.env.BIGQUERY_PROJECT_ID;
-if (!projectId) {
-  throw new Error('BIGQUERY_PROJECT_ID no está definido en las variables de entorno.');
-}
-
-const datasetId = process.env.BIGQUERY_DATASET_ID || 'z_people';
-// Puedes definir una variable específica para la tabla de usuarios, o usar la misma si no varía.
-const tableId = process.env.BIGQUERY_USERS_TABLE_ID || 'users';
-
-const credentials = process.env.BIGQUERY_CREDENTIALS
-  ? JSON.parse(process.env.BIGQUERY_CREDENTIALS)
-  : null;
-if (!credentials) {
-  throw new Error('BIGQUERY_CREDENTIALS no está definido en las variables de entorno.');
-}
-
-// Configuración de BigQuery usando las credenciales proporcionadas
-const auth = new GoogleAuth({
-  credentials,
-  scopes: ['https://www.googleapis.com/auth/bigquery'],
-});
+import { projectId, datasetId, tableId, auth } from "@/lib/bigQueryConfig"
 
 export async function deleteUser(userId: string) {
   try {
@@ -30,8 +7,7 @@ export async function deleteUser(userId: string) {
       WHERE user_id = @userId
     `;
 
-    const url = `https://bigquery.googleapis.com/bigquery/v2/projects/${projectId}/queries`;
-    
+    const url = `https://bigquery.googleapis.com/bigquery/v2/projects/${projectId}/queries`;    
     const client = await auth.getClient();
     const accessToken = await client.getAccessToken();
 

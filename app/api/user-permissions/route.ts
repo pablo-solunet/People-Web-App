@@ -24,8 +24,6 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { userId, permissionsToAdd, permissionsToRemove } = body;
     
-    // console.log("----------- Received Data : ", body)
-
     if (!userId || (!permissionsToAdd && !permissionsToRemove)) {
       return NextResponse.json({ error: 'Invalid input or no permissions to update' }, { status: 400 });
     }

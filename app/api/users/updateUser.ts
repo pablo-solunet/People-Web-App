@@ -1,24 +1,4 @@
-import { GoogleAuth } from 'google-auth-library';
-
-const projectId = process.env.BIGQUERY_PROJECT_ID;
-if (!projectId) {
-  throw new Error('BIGQUERY_PROJECT_ID no está definido en las variables de entorno.');
-}
-
-const datasetId = process.env.BIGQUERY_DATASET_ID || 'z_people';
-const tableId = process.env.BIGQUERY_USERS_TABLE_ID || 'users';
-
-const credentials = process.env.BIGQUERY_CREDENTIALS
-  ? JSON.parse(process.env.BIGQUERY_CREDENTIALS)
-  : null;
-if (!credentials) {
-  throw new Error('BIGQUERY_CREDENTIALS no está definido en las variables de entorno.');
-}
-
-const auth = new GoogleAuth({
-  credentials,
-  scopes: ['https://www.googleapis.com/auth/bigquery'],
-});
+import { projectId, datasetId, tableId, auth } from "@/lib/bigQueryConfig"
 
 export async function updateUser(
   userId: string,
@@ -27,15 +7,11 @@ export async function updateUser(
   try {
     const { username, legajo, is_active } = body;
 
-    // console.log("------------ Received Data:", body);
-
     const query = `
       UPDATE \`${projectId}.${datasetId}.${tableId}\`
       SET username = "${username}", legajo = "${legajo}", is_active = ${is_active}, updated_at = CURRENT_TIMESTAMP()
       WHERE user_id = '${userId}'
     `;
-
-    // console.log("------------ query:", query);
 
     const url = `https://bigquery.googleapis.com/bigquery/v2/projects/${projectId}/queries`;
     const client = await auth.getClient();

@@ -1,33 +1,4 @@
-import { BigQuery } from '@google-cloud/bigquery';
-import { GoogleAuth } from 'google-auth-library';
-
-// Configuración mediante variables de entorno
-const projectId = process.env.BIGQUERY_PROJECT_ID;
-if (!projectId) {
-  throw new Error('BIGQUERY_PROJECT_ID no está definido en las variables de entorno.');
-}
-
-const datasetId = process.env.BIGQUERY_DATASET_ID || 'z_people';
-// Para la tabla de usuarios puedes usar una variable específica o el valor por defecto
-const tableId = process.env.BIGQUERY_USERS_TABLE_ID || 'users';
-
-const credentials = process.env.BIGQUERY_CREDENTIALS
-  ? JSON.parse(process.env.BIGQUERY_CREDENTIALS)
-  : null;
-if (!credentials) {
-  throw new Error('BIGQUERY_CREDENTIALS no está definido en las variables de entorno.');
-}
-
-// Configuración de autenticación y cliente de BigQuery usando las credenciales
-const auth = new GoogleAuth({
-  credentials,
-  scopes: ['https://www.googleapis.com/auth/bigquery'],
-});
-
-const bigquery = new BigQuery({
-  projectId,
-  credentials,
-});
+import { bigquery, projectId, datasetId, tableId, auth } from "@/lib/bigQueryConfig"
 
 // Función para generar username a partir del email
 function generateUsername(email: string): string {
@@ -36,7 +7,6 @@ function generateUsername(email: string): string {
 
 // Función para obtener el ID de empleado y legajo desde Odoo
 async function getEmployeeId(email: string): Promise<{ employeeId: string | null; legajo: string | null }> {
-  // Se utiliza el projectId obtenido de la variable de entorno
   const query = `
     SELECT id, global_file
     FROM \`${projectId}.Odoo.tbl_Employees\`
