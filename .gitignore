@@ -8,11 +8,11 @@ temp
 
 node_modules/
 .next/
-.env
-.env.local
-
 
 credenciales/
+.env
+.env.local
 credencialesbq.json
 test.js
 tailwind.config copy.js
+notas.txt
