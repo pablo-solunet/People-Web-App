@@ -10,6 +10,7 @@ node_modules/
 .next/
 
 credenciales/
+BACKUP/
 .env
 .env.local
 credencialesbq.json

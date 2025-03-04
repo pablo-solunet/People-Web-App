@@ -1,4 +1,4 @@
-import { projectId, datasetId, tableId, auth } from "@/lib/bigQueryConfig"
+import { projectId, datasetId, table_agent_form, auth } from "@/lib/bigQueryConfig"
 
 export async function insertAgentFormData(data: any[]) {
   try {
@@ -15,7 +15,7 @@ export async function insertAgentFormData(data: any[]) {
     if (data && data.length > 0) {
       // Construir la consulta de inserción usando parámetros nombrados
       const query = `
-          INSERT INTO \`${projectId}.${datasetId}.${tableId}\`
+          INSERT INTO \`${projectId}.${datasetId}.${table_agent_form}\`
           (
             id_reg, lote_id, requisition_id, created_by, pais, fechaIngreso, cliente, canal,
             compania, horarioIn, horarioOut, job_title, jobDescription, puesto,

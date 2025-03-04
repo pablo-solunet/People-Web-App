@@ -1,4 +1,4 @@
-import { bigquery, projectId, datasetId, tableId, auth } from "@/lib/bigQueryConfig"
+import { bigquery, projectId, datasetId, table_users, auth } from "@/lib/bigQueryConfig"
 
 // Función para generar username a partir del email
 function generateUsername(email: string): string {
@@ -27,7 +27,7 @@ async function getEmployeeId(email: string): Promise<{ employeeId: string | null
 async function checkExistingUser(email: string): Promise<boolean> {
   const query = `
     SELECT COUNT(*) as count
-    FROM \`${projectId}.${datasetId}.${tableId}\`
+    FROM \`${projectId}.${datasetId}.${table_users}\`
     WHERE email = "${email}"
   `;
 
@@ -54,7 +54,7 @@ export async function insertUser(email: string, password: string) {
     const username = generateUsername(email);
 
     const query = `
-      INSERT INTO \`${projectId}.${datasetId}.${tableId}\`
+      INSERT INTO \`${projectId}.${datasetId}.${table_users}\`
       (user_id, email, username, password, legajo)
       VALUES(@user_id, @email, @username, @password, @legajo)
     `;

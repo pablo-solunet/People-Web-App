@@ -1,4 +1,4 @@
-import { projectId, datasetId, tableId, auth } from "@/lib/bigQueryConfig"
+import { projectId, datasetId, table_user_permissions, auth } from "@/lib/bigQueryConfig"
 
 export async function updateUserPermissions(
   userId: string,
@@ -21,7 +21,7 @@ export async function updateUserPermissions(
     // Eliminar permisos
     if (permissionsToRemove && permissionsToRemove.length > 0) {
       const deleteQuery = `
-        DELETE FROM \`${projectId}.${datasetId}.${tableId}\`
+        DELETE FROM \`${projectId}.${datasetId}.${table_user_permissions}\`
         WHERE user_id = @userId
         AND user_permission_id IN UNNEST(@permissionIds)
       `;
@@ -56,7 +56,7 @@ export async function updateUserPermissions(
     // Agregar permisos
     if (permissionsToAdd && permissionsToAdd.length > 0) {
       const insertQuery = `
-        INSERT INTO \`${projectId}.${datasetId}.${tableId}\`
+        INSERT INTO \`${projectId}.${datasetId}.${table_user_permissions}\`
         (user_permission_id, user_id, permission_id, resource, action)
         VALUES
         ${permissionsToAdd

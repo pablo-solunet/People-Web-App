@@ -1,9 +1,9 @@
-import { projectId, datasetId, tableId, auth } from "@/lib/bigQueryConfig"
+import { projectId, datasetId, table_users, auth } from "@/lib/bigQueryConfig"
 
 export async function deleteUser(userId: string) {
   try {
     const query = `
-      DELETE FROM \`${projectId}.${datasetId}.${tableId}\`
+      DELETE FROM \`${projectId}.${datasetId}.${table_users}\`
       WHERE user_id = @userId
     `;
 

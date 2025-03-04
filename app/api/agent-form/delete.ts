@@ -1,9 +1,9 @@
-import { projectId, datasetId, tableId, auth } from "@/lib/bigQueryConfig"
+import { projectId, datasetId, table_agent_form, auth } from "@/lib/bigQueryConfig"
 
 export async function deleteAgentFormData(id: string) {
   try {
     const query = `
-      DELETE FROM \`${projectId}.${datasetId}.${tableId}\`
+      DELETE FROM \`${projectId}.${datasetId}.${table_agent_form}\`
       WHERE id_reg = @id
     `;
 

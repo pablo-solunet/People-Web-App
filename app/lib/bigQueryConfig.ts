@@ -8,7 +8,12 @@ if (!projectId) {
 }
 
 const datasetId = process.env.BIGQUERY_DATASET_ID || "z_people"
-const tableId = process.env.BIGQUERY_TABLE_ID || "agent_form_data"
+
+const table_agent_form = process.env.BIGQUERY_TABLE_AGENT_FORM || "agent_form_data"
+const table_staff_form_data = process.env.BIGQUERY_TABLE_STAFF_FORM || "staff_form_data"
+const table_users = process.env.BIGQUERY_TABLE_USER || "users"
+const table_permissions = process.env.BIGQUERY_TABLE_PERMISSIONS || "permissions"
+const table_user_permissions = process.env.BIGQUERY_TABLE_USER_PERMISSIONS || "user_permissions"
 
 const credentials = process.env.BIGQUERY_CREDENTIALS ? JSON.parse(process.env.BIGQUERY_CREDENTIALS) : null
 if (!credentials) {
@@ -27,5 +32,5 @@ const bigquery = new BigQuery({
   credentials,
 })
 
-export { projectId, datasetId, tableId, auth, bigquery }
+export { projectId, datasetId, auth, bigquery, table_agent_form, table_staff_form_data, table_users, table_permissions, table_user_permissions}
 

@@ -1,11 +1,11 @@
-import { bigquery, projectId, datasetId, tableId } from "@/lib/bigQueryConfig"
+import { bigquery, projectId, datasetId, table_permissions } from "@/lib/bigQueryConfig"
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
     const query = `
       SELECT permission_id, resource, action, description
-      FROM \`${projectId}.${datasetId}.${tableId}\`
+      FROM \`${projectId}.${datasetId}.${table_permissions}\`
     `;
 
     const [rows] = await bigquery.query({ query });

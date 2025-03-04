@@ -1,4 +1,4 @@
-import { projectId, datasetId, tableId, auth } from "@/lib/bigQueryConfig"
+import { projectId, datasetId, table_agent_form, auth } from "@/lib/bigQueryConfig"
 
 export async function updateAgentFormData(data: any) {
   try {
@@ -7,7 +7,7 @@ export async function updateAgentFormData(data: any) {
 
     // parametrizar estos valores para evitar inyección SQL.
     const query = `
-      UPDATE \`${projectId}.${datasetId}.${tableId}\`
+      UPDATE \`${projectId}.${datasetId}.${table_agent_form}\`
       SET 
         estado = "${estado}",
         area = "${area}",

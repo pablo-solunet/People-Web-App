@@ -1,4 +1,4 @@
-import { projectId, datasetId, tableId, auth } from "@/lib/bigQueryConfig"
+import { projectId, datasetId, table_agent_form, auth } from "@/lib/bigQueryConfig"
 
 export async function getAgentFormData(id?: string | null) {
   try {
@@ -13,7 +13,7 @@ export async function getAgentFormData(id?: string | null) {
 
     if (id) {
       query = `
-        SELECT * FROM \`${projectId}.${datasetId}.${tableId}\`
+        SELECT * FROM \`${projectId}.${datasetId}.${table_agent_form}\`
         WHERE id = @id
       `;
       queryParameters.push({
@@ -23,7 +23,7 @@ export async function getAgentFormData(id?: string | null) {
       });
     } else {
       query = `
-        SELECT * FROM \`${projectId}.${datasetId}.${tableId}\`
+        SELECT * FROM \`${projectId}.${datasetId}.${table_agent_form}\`
       `;
     }
 

@@ -1,10 +1,10 @@
-import { bigquery, projectId, datasetId, tableId } from "@/lib/bigQueryConfig"
+import { bigquery, projectId, datasetId, table_users } from "@/lib/bigQueryConfig"
 
 export async function getUsers() {
   try {
     const query = `
       SELECT user_id, email, username, legajo, created_at, updated_at, is_active
-      FROM \`${projectId}.${datasetId}.${tableId}\`
+      FROM \`${projectId}.${datasetId}.${table_users}\`
     `;
 
     const [rows] = await bigquery.query({ query });

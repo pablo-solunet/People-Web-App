@@ -1,4 +1,4 @@
-import { projectId, datasetId, tableId, auth } from "@/lib/bigQueryConfig"
+import { projectId, datasetId, table_users, auth } from "@/lib/bigQueryConfig"
 
 export async function updateUser(
   userId: string,
@@ -8,7 +8,7 @@ export async function updateUser(
     const { username, legajo, is_active } = body;
 
     const query = `
-      UPDATE \`${projectId}.${datasetId}.${tableId}\`
+      UPDATE \`${projectId}.${datasetId}.${table_users}\`
       SET username = "${username}", legajo = "${legajo}", is_active = ${is_active}, updated_at = CURRENT_TIMESTAMP()
       WHERE user_id = '${userId}'
     `;

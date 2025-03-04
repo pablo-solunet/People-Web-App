@@ -1,11 +1,11 @@
-import { projectId, datasetId, tableId, auth } from "@/lib/bigQueryConfig"
+import { bigquery, projectId, datasetId, auth, table_user_permissions } from "@/lib/bigQueryConfig"
 import { GoogleAuth } from 'google-auth-library';
 
 export async function getUserPermissions(userId: string) {
   try {
     const query = `
       SELECT user_permission_id, user_id, permission_id, resource, action
-      FROM \`${projectId}.${datasetId}.${tableId}\`
+      FROM \`${projectId}.${datasetId}.${table_user_permissions}\`
       WHERE user_id = "${userId}"
     `;
 
