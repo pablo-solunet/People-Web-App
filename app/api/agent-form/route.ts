@@ -31,11 +31,31 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
+
+    // Obtener la IP del cliente desde los headers
+    const forwardedFor = request.headers.get("x-forwarded-for")
+    const clientIP = forwardedFor ? forwardedFor.split(",")[0].trim() : "unknown"
+
+    // También podemos intentar obtener la IP real si estamos detrás de un proxy
+    const realIP = request.headers.get("x-real-ip") || clientIP
+
+    // Añadir la IP al objeto body que se pasa a la función de actualización
+    const dataWithIP = {
+      ...body,
+      approvedFromIP: realIP,
+    }
+
     // console.log('---------- Data Received:', body);
-    const result = await updateAgentFormData(body);
+    //GENERAMOS los resultados ya con el Body incluido
+    const result = await updateAgentFormData(dataWithIP)
 
-
-    return NextResponse.json(result);
+    return NextResponse.json({
+      ...result,
+      data: {
+        ...result.data,
+        approvedFromIP: realIP,
+      },
+    })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }

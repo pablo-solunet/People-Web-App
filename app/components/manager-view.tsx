@@ -11,6 +11,9 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/components/ui/use-toast"
 import { Textarea } from "@/components/ui/textarea"
+import { columnDisplayNames } from "@/lib/column-display-names"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,9 +24,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { columnDisplayNames } from "@/lib/column-display-names"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 
 interface ManagerData {
   id_reg: string
@@ -63,6 +63,7 @@ interface ManagerData {
   observaciones: string
   area: string
   comentario: string
+  approvedFromIP?: string
 }
 
 interface ManagerViewProps {
@@ -113,14 +114,6 @@ export function ManagerView({ hasActionPermission }: ManagerViewProps) {
   const [filterValue, setFilterValue] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
-  const [visibleFields, setVisibleFields] = useState<(keyof ManagerData)[]>([
-    "requisition_id",
-    "created_by",
-    "pais",
-    "fechaIngreso",
-    "estado",
-    "observaciones",
-  ])
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
   const [rejectComment, setRejectComment] = useState("")
@@ -130,6 +123,15 @@ export function ManagerView({ hasActionPermission }: ManagerViewProps) {
   const [alertAction, setAlertAction] = useState<{ type: "approve" | "reject"; id: string; isLote: boolean } | null>(
     null,
   )
+
+  const [visibleFields, setVisibleFields] = useState<(keyof ManagerData)[]>([
+    "requisition_id",
+    "created_by",
+    "pais",
+    "fechaIngreso",
+    "estado",
+    "observaciones",
+  ])
 
   useEffect(() => {
     fetchManagerData()
@@ -185,6 +187,7 @@ export function ManagerView({ hasActionPermission }: ManagerViewProps) {
               "domingo_in",
               "domingo_out",
               "area",
+              "approvedFromIP",
             ]
             record[fieldNames[index]] = field.v
           })
@@ -292,7 +295,13 @@ export function ManagerView({ hasActionPermission }: ManagerViewProps) {
       if (result.success) {
         setManagerData((prevData) =>
           prevData.map((record) =>
-            record.id_reg === id_reg ? { ...record, estado: newState, comentario: rejectComment } : record,
+            record.id_reg === id_reg ? { 
+              ...record,
+              estado: newState,
+              comentario: rejectComment,
+              approvedFromIP: result.data.approvedFromIP, // Obtener la IP del resultado
+            }
+            : record,
           ),
         )
         toast({
@@ -377,7 +386,8 @@ export function ManagerView({ hasActionPermission }: ManagerViewProps) {
     if (!filterField) return []
     const values = managerData
       .map((record) => record[filterField as keyof ManagerData])
-      .filter((value) => value !== null && value !== undefined && value !== "")
+      .filter((value): value is string => value !== null && value !== undefined && value !== "")
+      .map((value) => String(value)) // Asegurarse de que todos los valores son strings
     return Array.from(new Set(values))
   }, [managerData, filterField])
 

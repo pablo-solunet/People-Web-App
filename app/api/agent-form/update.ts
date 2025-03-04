@@ -3,7 +3,7 @@ import { projectId, datasetId, table_agent_form, auth } from "@/lib/bigQueryConf
 export async function updateAgentFormData(data: any) {
   try {
     // Extraer variables relevantes del objeto recibido
-    const { isLote, lote_id, id_reg, estado, area, legajo, observaciones } = data;
+    const { isLote, lote_id, id_reg, estado, area, legajo, observaciones, approvedFromIP } = data;
 
     // parametrizar estos valores para evitar inyección SQL.
     const query = `
@@ -22,7 +22,8 @@ export async function updateAgentFormData(data: any) {
           WHEN observaciones IS NULL OR observaciones = '' OR observaciones = 'undefined'
             THEN "${observaciones}"
           ELSE observaciones
-        END
+        END,
+        approvedFromIP=${approvedFromIP ? `"${approvedFromIP}"` : null}
       WHERE id_reg = "${id_reg}"
     `;
 
@@ -55,6 +56,7 @@ export async function updateAgentFormData(data: any) {
         { name: 'horaSalida', parameterType: { type: 'STRING' }, parameterValue: { value: data.horaSalida } },
         { name: 'job_title', parameterType: { type: 'STRING' }, parameterValue: { value: data.job_title } },
         { name: 'observaciones', parameterType: { type: 'STRING' }, parameterValue: { value: data.observaciones } },
+        { name: 'approvedFromIP', parameterType: { type: 'STRING' }, parameterValue: { value: data.approvedFromIP } },
       ],
     };
 
