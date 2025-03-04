@@ -1,5 +1,4 @@
-import { bigquery, projectId, datasetId, auth, table_user_permissions } from "@/lib/bigQueryConfig"
-import { GoogleAuth } from 'google-auth-library';
+import { projectId, datasetId, auth, table_user_permissions } from "@/lib/bigQueryConfig"
 
 export async function getUserPermissions(userId: string) {
   try {
