@@ -16,7 +16,6 @@ export function getResetPasswordEmailTemplate({ email, username, newPassword }: 
         <p><strong>Usuario:</strong> ${username}</p>
         <p><strong>Nueva Contraseña:</strong> ${newPassword}</p>
       </div>
-      // <p>Por razones de seguridad, te recomendamos cambiar esta contraseña después de iniciar sesión.</p>
       <p>Si no solicitaste este cambio, por favor contacta al administrador del sistema inmediatamente.</p>
       <p>Saludos,<br>People Team</p>
     </div>

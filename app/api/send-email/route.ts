@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     if (type === "reset-password") {
       htmlContent = getResetPasswordEmailTemplate({
         email,
-        username: username || email,
+        username: username,
         newPassword: password,
       })
       subject = "Restablecimiento de contraseña - People App"
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
       // Por defecto, usar la plantilla de credenciales
       htmlContent = getCredentialsEmailTemplate({
         email,
-        username: username || email,
+        username: username,
         password,
       })
       subject = "Tus credenciales de acceso a People App"

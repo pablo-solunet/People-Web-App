@@ -68,7 +68,7 @@ export function UserManagement() {
         body: JSON.stringify({
           email: newUser.email,
           password: newUser.password,
-          username: newUser.username || newUser.email.split("@")[0],
+          username: newUser.email.split("@")[0],
         }),
       })
 
@@ -87,7 +87,7 @@ export function UserManagement() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               email: newUser.email,
-              username: newUser.username || newUser.email.split("@")[0],
+              username: newUser.email.split("@")[0],
               password: newUser.password,
               type: "credentials", // Especificar que es un correo de credenciales
             }),
@@ -209,7 +209,7 @@ export function UserManagement() {
 
       // Actualizar la contraseña del usuario
       const updateResponse = await fetch("/api/users/reset-password", {
-        method: "POST",
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user.user_id,

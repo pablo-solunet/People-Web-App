@@ -1,15 +1,13 @@
 import { projectId, datasetId, table_users, auth } from "@/lib/bigQueryConfig"
 
-export async function updateUser(
+export async function updateUserPass(
   userId: string,
-  body: { username: string; legajo: string; is_active: boolean }
+  password: string,
 ) {
   try {
-    const { username, legajo, is_active } = body;
-
     const query = `
       UPDATE \`${projectId}.${datasetId}.${table_users}\`
-      SET username = "${username}", legajo = "${legajo}", is_active = ${is_active}, updated_at = CURRENT_TIMESTAMP()
+      SET password = "${password}"
       WHERE user_id = '${userId}'
     `;
 
@@ -35,7 +33,7 @@ export async function updateUser(
 
     const data = await response.json();
 
-    return { success: true, message: 'User updated successfully' };
+    return { success: true, message: 'Password updated successfully' };
   } catch (error) {
     console.error('Error updating user:', error);
     throw error;
