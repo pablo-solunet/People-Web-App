@@ -89,6 +89,7 @@ export function UserManagement() {
               email: newUser.email,
               username: newUser.username || newUser.email.split("@")[0],
               password: newUser.password,
+              type: "credentials", // Especificar que es un correo de credenciales
             }),
           })
 
@@ -220,7 +221,7 @@ export function UserManagement() {
         throw new Error("Error al actualizar la contraseña")
       }
 
-      // Enviar el correo con las nuevas credenciales
+      // Enviar el correo con las nuevas credenciales usando la plantilla de reset-password
       const emailResponse = await fetch("/api/send-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -228,6 +229,7 @@ export function UserManagement() {
           email: user.email,
           username: user.username || user.email.split("@")[0],
           password: newPassword,
+          type: "reset-password", // Especificar que es un correo de restablecimiento de contraseña
         }),
       })
 
@@ -236,8 +238,8 @@ export function UserManagement() {
       }
 
       toast({
-        title: "Credenciales enviadas",
-        description: "Las nuevas credenciales han sido enviadas al usuario.",
+        title: "Contraseña restablecida",
+        description: "La nueva contraseña ha sido enviada al usuario.",
         variant: "default",
       })
     } catch (err) {
@@ -251,7 +253,7 @@ export function UserManagement() {
       setIsSendingEmail(false)
     }
   }
-
+  
   return (
     <div className="space-y-8">
       <div>
@@ -417,6 +419,7 @@ export function UserManagement() {
                             onClick={() => handleResendCredentials(user)}
                             disabled={isSendingEmail}
                             className="text-blue-500 hover:text-blue-700"
+                            title="Restablecer contraseña"
                           >
                             <Mail className="h-4 w-4" />
                           </Button>
