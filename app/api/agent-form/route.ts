@@ -36,7 +36,7 @@ export async function PUT(request: NextRequest) {
     const forwardedFor = request.headers.get("x-forwarded-for")
     const clientIP = forwardedFor ? forwardedFor.split(",")[0].trim() : "unknown"
 
-    // También podemos intentar obtener la IP real si estamos detrás de un proxy
+    // obtener la IP real
     const realIP = request.headers.get("x-real-ip") || clientIP
 
     // Añadir la IP al objeto body que se pasa a la función de actualización
@@ -45,7 +45,7 @@ export async function PUT(request: NextRequest) {
       approvedFromIP: realIP,
     }
 
-    // console.log('---------- Data Received:', body);
+    console.log('---------- Data Received:', body);
     //GENERAMOS los resultados ya con el Body incluido
     const result = await updateAgentFormData(dataWithIP)
 

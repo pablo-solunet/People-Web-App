@@ -34,6 +34,7 @@ interface PeopleData {
   pais: string
   fechaIngreso: string
   cliente: string
+  atencion: string
   canal: string
   compania: string
   cargaHoraria: string
@@ -64,6 +65,7 @@ interface PeopleData {
   area: string
   comentario: string
 
+  documento: string
   legajo: string
 }
 
@@ -79,6 +81,7 @@ const allFields: (keyof PeopleData)[] = [
   "pais",
   "fechaIngreso",
   "cliente",
+  "atencion",
   "canal",
   "compania",
   "cargaHoraria",
@@ -105,6 +108,7 @@ const allFields: (keyof PeopleData)[] = [
   "observaciones",
   "area",
   "legajo",
+  "documento",
 ]
 
 export function PeopleView({ hasActionPermission }: PeopleViewProps) {
@@ -120,6 +124,7 @@ export function PeopleView({ hasActionPermission }: PeopleViewProps) {
     "requisition_id",
     "created_by",
     "pais",
+    "atencion",
     "fechaIngreso",
     "estado",
     "observaciones",
@@ -132,7 +137,9 @@ export function PeopleView({ hasActionPermission }: PeopleViewProps) {
   const [alertAction, setAlertAction] = useState<{ type: "enbusqueda" | "confirmado"; id: string } | null>(null)
 
   const [isConfirmPopupOpen, setIsConfirmPopupOpen] = useState(false) // Controlar la visibilidad del popup
-  const [legajo, setLegajo] = useState("") // Almacenar el valor del legajo o documento
+  const [legajo, setLegajo] = useState("") // Almacenar el valor del legajo
+  const [documento, setDocumento] = useState("") // Almacenar el valor del documento
+  const [observaciones, setObservaciones] = useState("") // Almacenar el valor del documento
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null) // Almacenar el ID del registro seleccionado
 
   useEffect(() => {
@@ -164,6 +171,7 @@ export function PeopleView({ hasActionPermission }: PeopleViewProps) {
               "pais_contrato",
               "fechaIngreso",
               "cliente",
+              "atencion",
               "canal",
               "compania",
               "horarioIn",
@@ -190,16 +198,17 @@ export function PeopleView({ hasActionPermission }: PeopleViewProps) {
               "domingo_out",
               "area",
               "legajo",
+              "documento",
             ]
             record[fieldNames[index]] = field.v
           })
           return record as PeopleData
         })
         setPeopleData(formattedData)
-        toast({
-          title: "Datos actualizados",
-          description: "Los datos de entrenamiento han sido actualizados exitosamente.",
-        })
+        // toast({
+        //   title: "Datos actualizados",
+        //   description: "Los datos de entrenamiento han sido actualizados exitosamente.",
+        // })
       } else {
         console.error("Unexpected data structure:", data)
         setPeopleData([])
@@ -264,7 +273,7 @@ export function PeopleView({ hasActionPermission }: PeopleViewProps) {
     setVisibleFields((prev) => (prev.includes(field) ? prev.filter((f) => f !== field) : [...prev, field]))
   }
 
-  const updateRecordState = async (id_reg: string, newState: string, legajo?: string) => {
+  const updateRecordState = async (id_reg: string, newState: string, legajo?: string, documento?: string, observaciones?: string) => {
     try {
       let newestado = ""
       let newarea = ""
@@ -287,6 +296,8 @@ export function PeopleView({ hasActionPermission }: PeopleViewProps) {
           estado: newestado,
           area: newarea,
           legajo: legajo, // Incluir el legajo en la actualización
+          documento: documento, // Incluir el documento en la actualización
+          observaciones: observaciones, // Incluir el legajo en la actualización
         }),
       })
 
@@ -631,6 +642,7 @@ export function PeopleView({ hasActionPermission }: PeopleViewProps) {
               </TableBody>
             </Table>
           </CardContent>
+          
           <CardContent className="p-4 border-t border-blue-100 dark:border-blue-800">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center space-x-2">
@@ -670,6 +682,7 @@ export function PeopleView({ hasActionPermission }: PeopleViewProps) {
         </Card>
       )}
 
+      {/* MODAL DE CONFIRMACION */}
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent className="border-blue-200 dark:border-blue-800">
           <AlertDialogHeader>
@@ -694,14 +707,30 @@ export function PeopleView({ hasActionPermission }: PeopleViewProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar Asignación</AlertDialogTitle>
             <AlertDialogDescription>
-              Por favor, ingrese el legajo o documento del agente que será asignado a este requerimiento.
+              Por favor, ingrese el legajo y/o documento del agente que será asignado a este requerimiento.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-4">
             <Input
-              placeholder="Legajo o Documento"
+              placeholder="Legajo"
               value={legajo}
               onChange={(e) => setLegajo(e.target.value)}
+              className="border-blue-200 dark:border-blue-800"
+            />
+          </div>
+          <div className="space-y-4">
+            <Input
+              placeholder="Documento"
+              value={documento}
+              onChange={(e) => setDocumento(e.target.value)}
+              className="border-blue-200 dark:border-blue-800"
+            />
+          </div>
+          <div className="space-y-4">
+            <Input
+              placeholder="Observaciones"
+              value={observaciones}
+              onChange={(e) => setObservaciones(e.target.value)}
               className="border-blue-200 dark:border-blue-800"
             />
           </div>
@@ -711,6 +740,8 @@ export function PeopleView({ hasActionPermission }: PeopleViewProps) {
               onClick={() => {
                 setIsConfirmPopupOpen(false)
                 setLegajo("")
+                setDocumento("")
+                setObservaciones("")
               }}
             >
               Cancelar
@@ -719,10 +750,12 @@ export function PeopleView({ hasActionPermission }: PeopleViewProps) {
               className="bg-blue-600 hover:bg-blue-700"
               onClick={async () => {
                 if (selectedRecordId) {
-                  await updateRecordState(selectedRecordId, "Finalizado", legajo)
+                  await updateRecordState(selectedRecordId, "Finalizado", legajo, documento, observaciones)
                 }
                 setIsConfirmPopupOpen(false)
                 setLegajo("")
+                setDocumento("")
+                setObservaciones("")
               }}
             >
               Confirmar

@@ -35,6 +35,7 @@ interface ManagerData {
   pais: string
   fechaIngreso: string
   cliente: string
+  atencion: string
   canal: string
   compania: string
   cargaHoraria: string
@@ -78,6 +79,7 @@ const allFields: (keyof ManagerData)[] = [
   "pais",
   "fechaIngreso",
   "cliente",
+  "atencion",
   "canal",
   "compania",
   "cargaHoraria",
@@ -162,6 +164,7 @@ export function ManagerView({ hasActionPermission }: ManagerViewProps) {
               "pais_contrato",
               "fechaIngreso",
               "cliente",
+              "atencion",
               "canal",
               "compania",
               "horarioIn",
@@ -194,10 +197,10 @@ export function ManagerView({ hasActionPermission }: ManagerViewProps) {
           return record as ManagerData
         })
         setManagerData(formattedData)
-        toast({
-          title: "Datos actualizados",
-          description: "Los datos de entrenamiento han sido actualizados exitosamente.",
-        })
+        // toast({
+        //   title: "Datos actualizados",
+        //   description: "Los datos de entrenamiento han sido actualizados exitosamente.",
+        // })
       } else {
         console.error("Unexpected data structure:", data)
         setManagerData([])

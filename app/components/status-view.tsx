@@ -24,6 +24,7 @@ interface AgentFormData {
   pais: string
   fechaIngreso: string
   cliente: string
+  atencion: string
   canal: string
   compania: string
   cargaHoraria: string
@@ -61,6 +62,7 @@ const allFields: (keyof AgentFormData)[] = [
   "pais",
   "fechaIngreso",
   "cliente",
+  "atencion",
   "canal",
   "compania",
   "cargaHoraria",
@@ -106,6 +108,7 @@ export function StatusView({ records = [], onReload }: StatusViewProps) {
     "requisition_id",
     "created_by",
     "pais",
+    "atencion",
     "fechaIngreso",
     "area",
     "estado",
@@ -142,6 +145,7 @@ export function StatusView({ records = [], onReload }: StatusViewProps) {
               "pais_contrato",
               "fechaIngreso",
               "cliente",
+              "atencion",
               "canal",
               "compania",
               "horarioIn",

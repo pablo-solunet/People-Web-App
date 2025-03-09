@@ -85,7 +85,8 @@ export function MultiFormSystem() {
   const [remoteRecords, setRemoteRecords] = useState([])
   const [activeTab, setActiveTab] = useState("requerimiento")
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-
+  // const [hasActionPermission, setHasActionPermission] = useState(false) // State to track action permission
+  
   const handleFormSubmit = (data: Record<string, string>) => {
     const quantity = Number.parseInt(data.quantity) || 1
     const newIds = generateIds(quantity)
@@ -385,7 +386,11 @@ export function MultiFormSystem() {
                   ) : (
                     <>
                       {selectedUserType === "Agente" ? (
-                        <AgentForm onSubmit={handleFormSubmit} onReturn={handleReturnToPreForm} />
+                        <AgentForm
+                          onSubmit={handleFormSubmit}
+                          onReturn={handleReturnToPreForm}
+                          hasActionPermission={hasActionPermission}
+                        />
                       ) : (
                         <StaffForm onSubmit={handleFormSubmit} onReturn={handleReturnToPreForm} />
                       )}
@@ -469,7 +474,11 @@ export function MultiFormSystem() {
               ) : (
                 <>
                   {selectedUserType === "Agente" ? (
-                    <AgentForm onSubmit={handleFormSubmit} onReturn={handleReturnToPreForm} />
+                    <AgentForm 
+                      onSubmit={handleFormSubmit}
+                      onReturn={handleReturnToPreForm}
+                      hasActionPermission={hasActionPermission}
+                    />
                   ) : (
                     <StaffForm onSubmit={handleFormSubmit} onReturn={handleReturnToPreForm} />
                   )}

@@ -32,6 +32,9 @@ import { columnDisplayNames } from "@/lib/column-display-names"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
+const dias_para_Editar = process.env.DIAS_PARA_EDITAR || Number.parseInt("10")
+console.log(typeof dias_para_Editar)
+
 interface OperacionesData {
   id_reg: string
   lote_id: string
@@ -42,6 +45,7 @@ interface OperacionesData {
   pais: string
   fechaIngreso: string
   cliente: string
+  atencion: string
   canal: string
   compania: string
   cargaHoraria: string
@@ -72,6 +76,7 @@ interface OperacionesData {
   comentario: string
 
   legajo: string
+  documento: string
 }
 
 interface OperacionesViewProps {
@@ -86,7 +91,9 @@ const allFields: (keyof OperacionesData)[] = [
   "pais",
   "fechaIngreso",
   "legajo",
+  "documento",
   "cliente",
+  "atencion",
   "canal",
   "compania",
   "cargaHoraria",
@@ -128,6 +135,7 @@ export function OperacionesView({ hasActionPermission }: OperacionesViewProps) {
     "created_by",
     "area",
     "pais",
+    "atencion",
     "fechaIngreso",
     "legajo",
     "estado",
@@ -174,6 +182,7 @@ export function OperacionesView({ hasActionPermission }: OperacionesViewProps) {
               "pais_contrato",
               "fechaIngreso",
               "cliente",
+              "atencion",
               "canal",
               "compania",
               "horarioIn",
@@ -200,16 +209,23 @@ export function OperacionesView({ hasActionPermission }: OperacionesViewProps) {
               "domingo_out",
               "area",
               "legajo",
+              "documento",
             ]
             record[fieldNames[index]] = field.v
           })
           return record as OperacionesData
         })
+
+        // Actualizar el estado una sola vez con todos los datos
         setOperacionesData(formattedData)
-        toast({
-          title: "Datos actualizados",
-          description: "Los datos de operaciones han sido actualizados exitosamente.",
-        })
+
+        //  // Mostrar una única notificación después de que todos los datos se hayan procesado
+        //   setTimeout(() => {
+        //     toast({
+        //       title: "Datos actualizados",
+        //       description: "Los datos de operaciones han sido actualizados exitosamente.",
+        //     })
+        //   }, 5000)
       } else {
         console.error("Unexpected data structure:", data)
         setOperacionesData([])
@@ -233,7 +249,8 @@ export function OperacionesView({ hasActionPermission }: OperacionesViewProps) {
   }
 
   const filterAndSearchData = () => {
-    let result = operacionesData.filter((record) => record.area == "Operaciones" && record.estado !== "")
+    // let result = operacionesData.filter((record) => record.area == "Operaciones" && record.estado !== "")
+    let result = operacionesData.filter((record) => record.estado !== "")
 
     if (searchTerm) {
       result = result.filter((record) =>
@@ -329,22 +346,56 @@ export function OperacionesView({ hasActionPermission }: OperacionesViewProps) {
     }
   }
 
+  // Modificar la función handleEditSubmit para incluir solo los campos permitidos
   const handleEdit = (record: OperacionesData) => {
     setEditingRecord(record)
     setIsEditDialogOpen(true)
   }
 
+  // Definir los campos que pueden ser editados por Operaciones
+  const editableFields: (keyof OperacionesData)[] = [
+    "pais",
+    "fechaIngreso",
+    "cliente",
+    "canal",
+    "observaciones",
+    "horarioIn",
+    "horarioOut",
+    "lunes_in",
+    "lunes_out",
+    "martes_in",
+    "martes_out",
+    "miercoles_in",
+    "miercoles_out",
+    "jueves_in",
+    "jueves_out",
+    "viernes_in",
+    "viernes_out",
+    "sabado_in",
+    "sabado_out",
+    "domingo_in",
+    "domingo_out",
+    "cargaHoraria",
+  ]
+
   const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!editingRecord) return
     setIsSaving(true)
+
+    // Crear un objeto con solo los campos editables
+    const updatedFields: Partial<OperacionesData> = {}
+    editableFields.forEach((field) => {
+      updatedFields[field] = editingRecord[field]
+    })
+
     try {
       const response = await fetch("/api/agent-form", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(editingRecord),
+        body: JSON.stringify({ id_reg: editingRecord.id_reg, ...updatedFields }), // Enviar solo los campos actualizados
       })
 
       if (!response.ok) {
@@ -355,7 +406,7 @@ export function OperacionesView({ hasActionPermission }: OperacionesViewProps) {
 
       if (result.success) {
         setOperacionesData((prevData) =>
-          prevData.map((record) => (record.id_reg === editingRecord.id_reg ? editingRecord : record)),
+          prevData.map((record) => (record.id_reg === editingRecord.id_reg ? { ...record, ...updatedFields } : record)),
         )
         toast({
           title: "Éxito",
@@ -427,7 +478,7 @@ export function OperacionesView({ hasActionPermission }: OperacionesViewProps) {
     const today = new Date()
     const fecha = new Date(fechaIngreso)
     const diffDays = (fecha.getTime() - today.getTime()) / (1000 * 3600 * 24)
-    return diffDays >= 20
+    return diffDays >= Number(dias_para_Editar)
   }
 
   // Dentro del componente, antes del return:
@@ -771,24 +822,330 @@ export function OperacionesView({ hasActionPermission }: OperacionesViewProps) {
       </AlertDialog>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="border-blue-200 dark:border-blue-800">
+        <DialogContent className="border-blue-200 dark:border-blue-800 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Registro</DialogTitle>
             <DialogDescription>Modifique los campos necesarios y guarde los cambios.</DialogDescription>
           </DialogHeader>
           {editingRecord && (
-            <form onSubmit={handleEditSubmit}>
-              {visibleFields.map((field) => (
-                <div key={field} className="mb-4">
-                  <Label htmlFor={field}>{columnDisplayNames[field] || field}</Label>
+            <form onSubmit={handleEditSubmit} className="space-y-6">
+              {/* Datos Generales */}
+              <div className="space-y-4">
+                <h3 className="font-medium text-sm">Datos Generales</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="pais">País</Label>
+                    <Input
+                      id="pais"
+                      value={editingRecord.pais}
+                      onChange={(e) => setEditingRecord({ ...editingRecord, pais: e.target.value })}
+                      className="border-blue-200 dark:border-blue-800"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="fechaIngreso">Fecha de Ingreso</Label>
+                    <Input
+                      id="fechaIngreso"
+                      type="date"
+                      value={editingRecord.fechaIngreso}
+                      onChange={(e) => setEditingRecord({ ...editingRecord, fechaIngreso: e.target.value })}
+                      className="border-blue-200 dark:border-blue-800"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="cliente">Cliente</Label>
+                    <Input
+                      id="cliente"
+                      value={editingRecord.cliente}
+                      onChange={(e) => setEditingRecord({ ...editingRecord, cliente: e.target.value })}
+                      className="border-blue-200 dark:border-blue-800"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="canal">Canal</Label>
+                    <Input
+                      id="canal"
+                      value={editingRecord.canal}
+                      onChange={(e) => setEditingRecord({ ...editingRecord, canal: e.target.value })}
+                      className="border-blue-200 dark:border-blue-800"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Horario General */}
+              <div className="space-y-4">
+                <h3 className="font-medium text-sm">Horario General</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="cargaHoraria">Carga Horaria</Label>
+                    <Input
+                      id="cargaHoraria"
+                      value={editingRecord.cargaHoraria}
+                      onChange={(e) => setEditingRecord({ ...editingRecord, cargaHoraria: e.target.value })}
+                      className="border-blue-200 dark:border-blue-800"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="horarioIn">Horario Entrada</Label>
+                    <Input
+                      id="horarioIn"
+                      type="time"
+                      value={editingRecord.horarioIn}
+                      onChange={(e) => setEditingRecord({ ...editingRecord, horarioIn: e.target.value })}
+                      className="border-blue-200 dark:border-blue-800"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="horarioOut">Horario Salida</Label>
+                    <Input
+                      id="horarioOut"
+                      type="time"
+                      value={editingRecord.horarioOut}
+                      onChange={(e) => setEditingRecord({ ...editingRecord, horarioOut: e.target.value })}
+                      className="border-blue-200 dark:border-blue-800"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Horarios por Día */}
+              <div className="space-y-4">
+                <h3 className="font-medium text-sm">Horarios por Día</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Lunes */}
+                  <div className="space-y-2">
+                    <Label>Lunes</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label htmlFor="lunes_in" className="text-xs">
+                          Entrada
+                        </Label>
+                        <Input
+                          id="lunes_in"
+                          type="time"
+                          value={editingRecord.lunes_in}
+                          onChange={(e) => setEditingRecord({ ...editingRecord, lunes_in: e.target.value })}
+                          className="border-blue-200 dark:border-blue-800"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="lunes_out" className="text-xs">
+                          Salida
+                        </Label>
+                        <Input
+                          id="lunes_out"
+                          type="time"
+                          value={editingRecord.lunes_out}
+                          onChange={(e) => setEditingRecord({ ...editingRecord, lunes_out: e.target.value })}
+                          className="border-blue-200 dark:border-blue-800"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Martes */}
+                  <div className="space-y-2">
+                    <Label>Martes</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label htmlFor="martes_in" className="text-xs">
+                          Entrada
+                        </Label>
+                        <Input
+                          id="martes_in"
+                          type="time"
+                          value={editingRecord.martes_in}
+                          onChange={(e) => setEditingRecord({ ...editingRecord, martes_in: e.target.value })}
+                          className="border-blue-200 dark:border-blue-800"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="martes_out" className="text-xs">
+                          Salida
+                        </Label>
+                        <Input
+                          id="martes_out"
+                          type="time"
+                          value={editingRecord.martes_out}
+                          onChange={(e) => setEditingRecord({ ...editingRecord, martes_out: e.target.value })}
+                          className="border-blue-200 dark:border-blue-800"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Miércoles */}
+                  <div className="space-y-2">
+                    <Label>Miércoles</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label htmlFor="miercoles_in" className="text-xs">
+                          Entrada
+                        </Label>
+                        <Input
+                          id="miercoles_in"
+                          type="time"
+                          value={editingRecord.miercoles_in}
+                          onChange={(e) => setEditingRecord({ ...editingRecord, miercoles_in: e.target.value })}
+                          className="border-blue-200 dark:border-blue-800"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="miercoles_out" className="text-xs">
+                          Salida
+                        </Label>
+                        <Input
+                          id="miercoles_out"
+                          type="time"
+                          value={editingRecord.miercoles_out}
+                          onChange={(e) => setEditingRecord({ ...editingRecord, miercoles_out: e.target.value })}
+                          className="border-blue-200 dark:border-blue-800"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Jueves */}
+                  <div className="space-y-2">
+                    <Label>Jueves</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label htmlFor="jueves_in" className="text-xs">
+                          Entrada
+                        </Label>
+                        <Input
+                          id="jueves_in"
+                          type="time"
+                          value={editingRecord.jueves_in}
+                          onChange={(e) => setEditingRecord({ ...editingRecord, jueves_in: e.target.value })}
+                          className="border-blue-200 dark:border-blue-800"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="jueves_out" className="text-xs">
+                          Salida
+                        </Label>
+                        <Input
+                          id="jueves_out"
+                          type="time"
+                          value={editingRecord.jueves_out}
+                          onChange={(e) => setEditingRecord({ ...editingRecord, jueves_out: e.target.value })}
+                          className="border-blue-200 dark:border-blue-800"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Viernes */}
+                  <div className="space-y-2">
+                    <Label>Viernes</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label htmlFor="viernes_in" className="text-xs">
+                          Entrada
+                        </Label>
+                        <Input
+                          id="viernes_in"
+                          type="time"
+                          value={editingRecord.viernes_in}
+                          onChange={(e) => setEditingRecord({ ...editingRecord, viernes_in: e.target.value })}
+                          className="border-blue-200 dark:border-blue-800"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="viernes_out" className="text-xs">
+                          Salida
+                        </Label>
+                        <Input
+                          id="viernes_out"
+                          type="time"
+                          value={editingRecord.viernes_out}
+                          onChange={(e) => setEditingRecord({ ...editingRecord, viernes_out: e.target.value })}
+                          className="border-blue-200 dark:border-blue-800"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sábado */}
+                  <div className="space-y-2">
+                    <Label>Sábado</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label htmlFor="sabado_in" className="text-xs">
+                          Entrada
+                        </Label>
+                        <Input
+                          id="sabado_in"
+                          type="time"
+                          value={editingRecord.sabado_in}
+                          onChange={(e) => setEditingRecord({ ...editingRecord, sabado_in: e.target.value })}
+                          className="border-blue-200 dark:border-blue-800"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="sabado_out" className="text-xs">
+                          Salida
+                        </Label>
+                        <Input
+                          id="sabado_out"
+                          type="time"
+                          value={editingRecord.sabado_out}
+                          onChange={(e) => setEditingRecord({ ...editingRecord, sabado_out: e.target.value })}
+                          className="border-blue-200 dark:border-blue-800"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Domingo */}
+                  <div className="space-y-2">
+                    <Label>Domingo</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label htmlFor="domingo_in" className="text-xs">
+                          Entrada
+                        </Label>
+                        <Input
+                          id="domingo_in"
+                          type="time"
+                          value={editingRecord.domingo_in}
+                          onChange={(e) => setEditingRecord({ ...editingRecord, domingo_in: e.target.value })}
+                          className="border-blue-200 dark:border-blue-800"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="domingo_out" className="text-xs">
+                          Salida
+                        </Label>
+                        <Input
+                          id="domingo_out"
+                          type="time"
+                          value={editingRecord.domingo_out}
+                          onChange={(e) => setEditingRecord({ ...editingRecord, domingo_out: e.target.value })}
+                          className="border-blue-200 dark:border-blue-800"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Observaciones */}
+              <div className="space-y-4">
+                <h3 className="font-medium text-sm">Observaciones</h3>
+                <div>
+                  <Label htmlFor="observaciones">Observaciones</Label>
                   <Input
-                    id={field}
-                    value={editingRecord[field]}
-                    onChange={(e) => setEditingRecord({ ...editingRecord, [field]: e.target.value })}
+                    id="observaciones"
+                    value={editingRecord.observaciones}
+                    onChange={(e) => setEditingRecord({ ...editingRecord, observaciones: e.target.value })}
                     className="border-blue-200 dark:border-blue-800"
                   />
                 </div>
-              ))}
+              </div>
+
               <DialogFooter className="flex justify-between">
                 <Button
                   type="button"

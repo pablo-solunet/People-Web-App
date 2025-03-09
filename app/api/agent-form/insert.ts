@@ -17,7 +17,7 @@ export async function insertAgentFormData(data: any[]) {
       const query = `
           INSERT INTO \`${projectId}.${datasetId}.${table_agent_form}\`
           (
-            id_reg, lote_id, requisition_id, created_by, pais, fechaIngreso, cliente, canal,
+            id_reg, lote_id, requisition_id, created_by, pais, fechaIngreso, cliente, atencion, canal,
             compania, horarioIn, horarioOut, job_title, jobDescription, puesto,
             observaciones, estado, cargaHoraria,
             lunes_in, lunes_out, martes_in, martes_out, miercoles_in, miercoles_out,
@@ -27,7 +27,7 @@ export async function insertAgentFormData(data: any[]) {
           VALUES
             ${data.map((_, index) =>
               `(@id_reg${index}, @lote_id${index}, @requisition_id${index}, @created_by${index}, @pais${index},
-                @fechaIngreso${index}, @cliente${index}, @canal${index}, @compania${index}, @horarioIn${index}, @horarioOut${index},
+                @fechaIngreso${index}, @cliente${index}, @atencion${index}, @canal${index}, @compania${index}, @horarioIn${index}, @horarioOut${index},
                 @job_title${index}, @jobDescription${index}, @puesto${index}, @observaciones${index}, @estado${index}, @cargaHoraria${index},
                 @lunes_in${index}, @lunes_out${index}, @martes_in${index}, @martes_out${index}, @miercoles_in${index}, @miercoles_out${index},
                 @jueves_in${index}, @jueves_out${index}, @viernes_in${index}, @viernes_out${index}, @sabado_in${index}, @sabado_out${index},
@@ -44,6 +44,7 @@ export async function insertAgentFormData(data: any[]) {
         { name: `pais${index}`, parameterType: { type: 'STRING' }, parameterValue: { value: p.pais } },
         { name: `fechaIngreso${index}`, parameterType: { type: 'DATE' }, parameterValue: { value: p.fechaIngreso } },
         { name: `cliente${index}`, parameterType: { type: 'STRING' }, parameterValue: { value: p.cliente } },
+        { name: `atencion${index}`, parameterType: { type: 'STRING' }, parameterValue: { value: p.atencion } },
         { name: `canal${index}`, parameterType: { type: 'STRING' }, parameterValue: { value: p.canal } },
         { name: `compania${index}`, parameterType: { type: 'STRING' }, parameterValue: { value: p.compania } },
         { name: `horarioIn${index}`, parameterType: { type: 'STRING' }, parameterValue: { value: p.horarioIn } },

@@ -3,7 +3,7 @@ import { projectId, datasetId, table_agent_form, auth } from "@/lib/bigQueryConf
 export async function updateAgentFormData(data: any) {
   try {
     // Extraer variables relevantes del objeto recibido
-    const { isLote, lote_id, id_reg, estado, area, legajo, observaciones, approvedFromIP } = data;
+    const { isLote, lote_id, id_reg, estado, area, legajo, documento, observaciones, approvedFromIP } = data;
 
     // parametrizar estos valores para evitar inyección SQL.
     const query = `
@@ -16,16 +16,34 @@ export async function updateAgentFormData(data: any) {
             THEN "${legajo}"
             ELSE legajo
         END,
+        documento = CASE
+          WHEN "${documento}" IS NOT NULL AND "${documento}" != '' AND "${documento}" != 'undefined' 
+            THEN "${documento}"
+            ELSE legajo
+        END,
         observaciones = CASE
-          WHEN observaciones IS NOT NULL AND observaciones != '' AND "${observaciones}" IS NOT NULL AND "${observaciones}" != '' AND "${observaciones}" != 'undefined' 
-            THEN CONCAT("${observaciones}", '; ', observaciones)
-          WHEN observaciones IS NULL OR observaciones = '' OR observaciones = 'undefined'
-            THEN "${observaciones}"
+          WHEN "${observaciones}" IS NOT NULL AND "${observaciones}" != '' AND "${observaciones}" != 'undefined'
+            THEN CASE 
+                  WHEN observaciones IS NOT NULL AND observaciones != '' 
+                    THEN CONCAT(observaciones, '; ', "${observaciones}")
+                  ELSE "${observaciones}"
+                END
           ELSE observaciones
         END,
+
+        --observaciones = CASE
+        --  WHEN observaciones IS NOT NULL AND observaciones != '' AND "${observaciones}" IS NOT NULL AND "${observaciones}" != '' AND "${observaciones}" != 'undefined' 
+        --    THEN CONCAT("${observaciones}", '; ', observaciones)
+        --  WHEN observaciones IS NULL OR observaciones = '' OR observaciones = 'undefined'
+        --    THEN "${observaciones}"
+        --  ELSE observaciones
+        -- END,
+
         approvedFromIP=${approvedFromIP ? `"${approvedFromIP}"` : null}
       WHERE id_reg = "${id_reg}"
     `;
+
+    console.log("Query:", query)
 
 
     const url = `https://bigquery.googleapis.com/bigquery/v2/projects/${projectId}/queries`;

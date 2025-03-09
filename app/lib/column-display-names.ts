@@ -11,4 +11,5 @@ export const columnDisplayNames: Record<string, string> = {
       updated_at: "Actualizado el",
       created_at: "Creado el",
       compania: "Compañia",
+      atencion:"Atencion"
   };

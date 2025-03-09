@@ -35,6 +35,7 @@ interface TrainingData {
   pais: string
   fechaIngreso: string
   cliente: string
+  atencion: string
   canal: string
   compania: string
   cargaHoraria: string
@@ -77,6 +78,7 @@ const allFields: (keyof TrainingData)[] = [
   "pais",
   "fechaIngreso",
   "cliente",
+  "atencion",
   "canal",
   "compania",
   "cargaHoraria",
@@ -117,6 +119,7 @@ export function TrainingView({ hasActionPermission }: TrainingViewProps) {
     "requisition_id",
     "created_by",
     "pais",
+    "atencion",
     "fechaIngreso",
     "estado",
     "observaciones",
@@ -160,6 +163,7 @@ export function TrainingView({ hasActionPermission }: TrainingViewProps) {
               "pais_contrato",
               "fechaIngreso",
               "cliente",
+              "atencion",
               "canal",
               "compania",
               "horarioIn",
@@ -191,10 +195,10 @@ export function TrainingView({ hasActionPermission }: TrainingViewProps) {
           return record as TrainingData
         })
         setTrainingData(formattedData)
-        toast({
-          title: "Datos actualizados",
-          description: "Los datos de entrenamiento han sido actualizados exitosamente.",
-        })
+        // toast({
+        //   title: "Datos actualizados",
+        //   description: "Los datos de entrenamiento han sido actualizados exitosamente.",
+        // })
       } else {
         console.error("Unexpected data structure:", data)
         setTrainingData([])
