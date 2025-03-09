@@ -32,7 +32,7 @@ import { columnDisplayNames } from "@/lib/column-display-names"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
-const dias_para_Editar = process.env.DIAS_PARA_EDITAR || Number.parseInt("10")
+const dias_para_Editar = process.env.DIAS_PARA_EDITAR || Number.parseInt("20")
 console.log(typeof dias_para_Editar)
 
 interface OperacionesData {

@@ -1,5 +1,7 @@
 "use client"
 
+// Importar TempRecord desde multi-form-system
+import type { TempRecord } from "./multi-form-system"
 import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -90,8 +92,9 @@ const allFields: (keyof AgentFormData)[] = [
   "area",
 ]
 
+// Modificar la interfaz StatusViewProps para aceptar TempRecord
 interface StatusViewProps {
-  records?: AgentFormData[]
+  records?: AgentFormData[] | TempRecord[]
   onReload?: () => void
 }
 

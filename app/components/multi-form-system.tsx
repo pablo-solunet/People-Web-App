@@ -29,7 +29,8 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 type UserType = "Agente" | "Staff"
 
-interface TempRecord {
+// Exportar la interfaz TempRecord para que pueda ser importada por otros componentes
+export interface TempRecord {
   id_reg: string
   lote_id: string
   requisition_id: string
