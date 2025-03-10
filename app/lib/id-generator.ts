@@ -1,25 +1,44 @@
-let requisitionCounter = 1;
-let loteCounter = 1;
+// Función para generar IDs únicos desde el servidor
+export async function generateIdsFromServer(count = 1) {
+  try {
+    const response = await fetch(`/api/sequence?count=${count}`)
 
-function generateUniqueId() {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    if (!response.ok) {
+      throw new Error("Error al obtener IDs secuenciales del servidor")
+    }
+
+    const data = await response.json()
+
+    if (!data.success) {
+      throw new Error(data.error || "Error desconocido al generar IDs")
+    }
+
+    return data.ids
+  } catch (error) {
+    console.error("Error al generar IDs:", error)
+    // Fallback a generación local en caso de error (solo para no interrumpir la experiencia)
+    return generateFallbackIds(count)
+  }
 }
 
-export function generateIds(count: number) {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const loteId = `LOT-${String(loteCounter).padStart(6, '0')}-${year}${month}${day}`;
+// Función de respaldo para generar IDs localmente (solo en caso de error de red)
+function generateFallbackIds(count: number) {
+  console.warn("Usando generación de IDs de respaldo. Los IDs podrían no ser secuenciales.")
 
-  const ids = Array.from({ length: count }, (_, index) => ({
-    id_reg: generateUniqueId(),
+  const date = new Date()
+  const timestamp = date.getTime()
+  const loteId = `LOT-FALLBACK-${timestamp}`
+
+  return Array.from({ length: count }, (_, index) => ({
+    id_reg: `${timestamp + index}-${Math.random().toString(36).substr(2, 9)}`,
     lote_id: loteId,
-    requisition_id: `RQ-${String(requisitionCounter + index).padStart(5, '0')}`
-  }));
+    requisition_id: `RQ-TEMP-${timestamp + index}`,
+  }))
+}
 
-  requisitionCounter += count;
-  loteCounter++;
-  return ids;
+// Mantener la función original para compatibilidad, pero ahora llama a la versión del servidor
+export function generateIds(count: number) {
+  console.warn("Usando función legacy generateIds(). Considere migrar a generateIdsFromServer() para IDs secuenciales.")
+  return generateFallbackIds(count)
 }
 

@@ -24,9 +24,10 @@ interface UserPermission {
 
 interface UserPermissionsProps {
   userId: string;
+  onComplete?: () => void // Callback para cuando se completa la actualización
 }
 
-export function UserPermissions({ userId }: UserPermissionsProps) {
+export function UserPermissions({ userId, onComplete}: UserPermissionsProps) {
   const [allPermissions, setAllPermissions] = useState<Permission[]>([]);
   const [userPermissions, setUserPermissions] = useState<UserPermission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -97,18 +98,60 @@ export function UserPermissions({ userId }: UserPermissionsProps) {
         );
       } else if (checked) {
         // If the permission doesn't exist and it's being checked, add it
-        return [...prevPermissions, {
-          user_permission_id: `temp_${Date.now()}`,
-          user_id: userId,
-          permission_id: permission.permission_id,
-          resource: permission.resource,
-          action: permission.action,
-          status: 'added'
-        }];
+        return [
+          ...prevPermissions,
+          {
+            user_permission_id: `temp_${Date.now()}`,
+            user_id: userId,
+            permission_id: permission.permission_id,
+            resource: permission.resource,
+            action: permission.action,
+            status: 'added'
+          }];
       }
       return prevPermissions;
     });
   };
+
+  // Función para seleccionar todos los permisos
+  const selectAllPermissions = () => {
+    const updatedPermissions = [...userPermissions]
+
+    // Recorrer todos los permisos disponibles
+    allPermissions.forEach((permission) => {
+      const existingPermIndex = updatedPermissions.findIndex((up) => up.permission_id === permission.permission_id)
+
+      if (existingPermIndex >= 0) {
+        // Si el permiso ya existe pero está marcado como 'removed', cambiarlo a 'unchanged'
+        if (updatedPermissions[existingPermIndex].status === "removed") {
+          updatedPermissions[existingPermIndex].status = "unchanged"
+        }
+      } else {
+        // Si el permiso no existe, añadirlo como 'added'
+        updatedPermissions.push({
+          user_permission_id: `temp_${Date.now()}_${permission.permission_id}`,
+          user_id: userId,
+          permission_id: permission.permission_id,
+          resource: permission.resource,
+          action: permission.action,
+          status: "added",
+        })
+      }
+    })
+
+    setUserPermissions(updatedPermissions)
+  }
+
+  // Función para deseleccionar todos los permisos
+  const deselectAllPermissions = () => {
+    setUserPermissions((prevPermissions) =>
+      prevPermissions.map((permission) => ({
+        ...permission,
+        status: permission.status === "added" ? "unchanged" : "removed",
+      })),
+    )
+  }
+
 
   const handleUpdatePermissions = async () => {
     try {
@@ -135,7 +178,15 @@ export function UserPermissions({ userId }: UserPermissionsProps) {
       setSuccessMessage('Permisos actualizados exitosamente');
       await fetchUserPermissions();
       setError(null);
-      setTimeout(() => setSuccessMessage(null), 3000);
+      
+      // Mostrar mensaje de éxito brevemente
+      setTimeout(() => {
+        setSuccessMessage(null)
+        // Llamar al callback onComplete para volver a la pestaña original
+        if (onComplete) {
+          onComplete()
+        }
+      }, 1500)
     } catch (err) {
       console.error('Error updating permissions:', err);
       setError('Error al actualizar los permisos: ' + (err instanceof Error ? err.message : String(err)));
@@ -144,6 +195,9 @@ export function UserPermissions({ userId }: UserPermissionsProps) {
 
   const handleCancel = () => {
     fetchUserPermissions(); // Reset to original state
+    if (onComplete) {
+      onComplete()
+    }
   };
 
   if (isLoading) {
@@ -160,6 +214,17 @@ export function UserPermissions({ userId }: UserPermissionsProps) {
 
   return (
     <div className="flex flex-col h-[70vh]">
+      <div className="mb-4 flex justify-between items-center">
+        <div className="flex space-x-2">
+          <Button variant="outline" size="sm" onClick={selectAllPermissions}>
+            Seleccionar Todos
+          </Button>
+          <Button variant="outline" size="sm" onClick={deselectAllPermissions}>
+            Deseleccionar Todos
+          </Button>
+        </div>
+      </div>
+
       <div className="flex-grow overflow-y-auto pr-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4">
           {[resourceGroups.slice(0, midpoint), resourceGroups.slice(midpoint)].map((column, columnIndex) => (
@@ -179,8 +244,10 @@ export function UserPermissions({ userId }: UserPermissionsProps) {
                       </TableHeader>
                       <TableBody>
                         {resourcePermissions.map((permission) => {
-                          const userPermission = userPermissions.find(up => up.permission_id === permission.permission_id);
-                          const isChecked = userPermission && userPermission.status !== 'removed';
+                          const userPermission = userPermissions.find(
+                            (up) => up.permission_id === permission.permission_id,
+                          )
+                          const isChecked = userPermission && userPermission.status !== "removed"
                           return (
                             <TableRow key={permission.permission_id}>
                               <TableCell className="font-medium">{permission.action}</TableCell>
@@ -191,7 +258,7 @@ export function UserPermissions({ userId }: UserPermissionsProps) {
                                 />
                               </TableCell>
                             </TableRow>
-                          );
+                          )
                         })}
                       </TableBody>
                     </Table>
@@ -208,7 +275,9 @@ export function UserPermissions({ userId }: UserPermissionsProps) {
         </Alert>
       )}
       <div className="mt-4 flex justify-end space-x-4 pt-4 border-t bg-background">
-        {/* <Button variant="outline" onClick={handleCancel}>Cancelar</Button> */}
+        <Button variant="outline" onClick={handleCancel}>
+          Cancelar
+        </Button>
         <Button onClick={handleUpdatePermissions}>Actualizar Permisos</Button>
       </div>
     </div>

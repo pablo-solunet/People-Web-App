@@ -278,9 +278,9 @@ export function UserManagement() {
                 className="mt-1"
               />
             </div>
-            <div>
+            {/* <div>
               <Label htmlFor="username">Nombre de usuario (opcional)</Label>
-              <Input
+              <Input 
                 id="username"
                 type="text"
                 placeholder="Nombre de usuario"
@@ -288,12 +288,12 @@ export function UserManagement() {
                 onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
                 className="mt-1"
               />
-            </div>
+            </div> */}
             <div>
               <Label htmlFor="password">Contraseña</Label>
               <Input
                 id="password"
-                type="password"
+                type="text"
                 placeholder="Contraseña"
                 value={newUser.password}
                 onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}

@@ -8,7 +8,7 @@ import { StaffForm } from "./form-staff"
 import { TempRecordsView } from "./temp-records-view"
 import { UserManagement } from "./user-management"
 import { StatusView } from "./status-view"
-import { generateIds } from "@/lib/id-generator"
+import { generateIds, generateIdsFromServer } from "@/lib/id-generator"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Moon, Sun, User, LogOut, Menu, X } from "lucide-react"
@@ -88,10 +88,11 @@ export function MultiFormSystem() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   // const [hasActionPermission, setHasActionPermission] = useState(false) // State to track action permission
   
-  const handleFormSubmit = (data: Record<string, string>) => {
+  const handleFormSubmit = async (data: Record<string, string>) => {
     const quantity = Number.parseInt(data.quantity) || 1
-    const newIds = generateIds(quantity)
-
+    // const newIds = generateIds(quantity)
+    const newIds = await generateIdsFromServer(quantity)
+    
     const newRecords = newIds.map(({ id_reg, lote_id, requisition_id }) => ({
       id_reg,
       lote_id,
@@ -137,6 +138,22 @@ export function MultiFormSystem() {
 
   const handleDelete = (id_reg: string) => {
     setTempRecords((prev) => prev.filter((record) => record.id_reg !== id_reg))
+  }
+
+  // Función para actualizar los registros con IDs generados
+  const handleGeneratedIds = (ids: any[]) => {
+    // Actualizar los registros con los nuevos IDs
+    setTempRecords((prevRecords) => {
+      return prevRecords.map((record, index) => {
+        if (index < ids.length) {
+          return {
+            ...record,
+            ...ids[index],
+          }
+        }
+        return record
+      })
+    })
   }
 
   const handleConfirmAll = () => {
@@ -400,6 +417,7 @@ export function MultiFormSystem() {
                         onDelete={handleDelete}
                         onConfirmAll={handleConfirmAll}
                         onCancelAll={handleCancelAll}
+                        onGenerateIds={handleGeneratedIds}
                       />
                     </>
                   )}
@@ -488,6 +506,8 @@ export function MultiFormSystem() {
                     onDelete={handleDelete}
                     onConfirmAll={handleConfirmAll}
                     onCancelAll={handleCancelAll}
+                    onGenerateIds={handleGeneratedIds}
+
                   />
                 </>
               )}
