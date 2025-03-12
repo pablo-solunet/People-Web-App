@@ -7,7 +7,7 @@ if (!projectId) {
   throw new Error("BIGQUERY_PROJECT_ID no está definido en las variables de entorno.")
 }
 
-const datasetId = process.env.BIGQUERY_DATASET_ID || "z_people"
+const datasetId = process.env.BIGQUERY_DATASET_ID || "People"
 
 const table_agent_form = process.env.BIGQUERY_TABLE_AGENT_FORM || "agent_form_data"
 const table_staff_form_data = process.env.BIGQUERY_TABLE_STAFF_FORM || "staff_form_data"

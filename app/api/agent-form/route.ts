@@ -45,7 +45,7 @@ export async function PUT(request: NextRequest) {
       approvedFromIP: realIP,
     }
 
-    console.log('---------- Data Received:', body);
+    // console.log('---------- Data Received:', body);
     //GENERAMOS los resultados ya con el Body incluido
     const result = await updateAgentFormData(dataWithIP)
 
@@ -54,6 +54,8 @@ export async function PUT(request: NextRequest) {
       data: {
         ...result.data,
         approvedFromIP: realIP,
+        log_track: body.log_track,
+        append_log: body.append_log,
       },
     })
   } catch (error) {

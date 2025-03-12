@@ -87,7 +87,9 @@ export function MultiFormSystem() {
   const [activeTab, setActiveTab] = useState("requerimiento")
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   // const [hasActionPermission, setHasActionPermission] = useState(false) // State to track action permission
-  
+
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
   const handleFormSubmit = async (data: Record<string, string>) => {
     const quantity = Number.parseInt(data.quantity) || 1
     // const newIds = generateIds(quantity)
@@ -429,7 +431,10 @@ export function MultiFormSystem() {
               <TabsContent value="people">
                 <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-blue-sm dark:shadow-none border border-blue-100 dark:border-blue-800">
                   <h2 className="text-2xl font-bold mb-4 text-blue-800 dark:text-blue-300">People</h2>
-                  <PeopleView hasActionPermission={hasActionPermission} />
+                  <PeopleView 
+                    hasActionPermission={hasActionPermission}
+                    currentUser={user}
+                  />
                 </div>
               </TabsContent>
             )}
@@ -438,7 +443,10 @@ export function MultiFormSystem() {
               <TabsContent value="training">
                 <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-blue-sm dark:shadow-none border border-blue-100 dark:border-blue-800">
                   <h2 className="text-2xl font-bold mb-4 text-blue-800 dark:text-blue-300">Training</h2>
-                  <TrainingView hasActionPermission={hasActionPermission} />
+                  <TrainingView 
+                    hasActionPermission={hasActionPermission}
+                    currentUser={user}
+                  />
                 </div>
               </TabsContent>
             )}
@@ -447,7 +455,10 @@ export function MultiFormSystem() {
               <TabsContent value="manager">
                 <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-blue-sm dark:shadow-none border border-blue-100 dark:border-blue-800">
                   <h2 className="text-2xl font-bold mb-4 text-blue-800 dark:text-blue-300">Manager</h2>
-                  <ManagerView hasActionPermission={hasActionPermission} />
+                  <ManagerView
+                    hasActionPermission={hasActionPermission}
+                    currentUser={user}
+                  />
                 </div>
               </TabsContent>
             )}
@@ -456,7 +467,10 @@ export function MultiFormSystem() {
               <TabsContent value="operaciones">
                 <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-blue-sm dark:shadow-none border border-blue-100 dark:border-blue-800">
                   <h2 className="text-2xl font-bold mb-4 text-blue-800 dark:text-blue-300">Operaciones</h2>
-                  <OperacionesView hasActionPermission={hasActionPermission} />
+                  <OperacionesView
+                    hasActionPermission={hasActionPermission}
+                    currentUser={user}
+                  />
                 </div>
               </TabsContent>
             )}

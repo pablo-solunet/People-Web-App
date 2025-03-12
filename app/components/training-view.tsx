@@ -68,6 +68,12 @@ interface TrainingData {
 
 interface TrainingViewProps {
   hasActionPermission: (action: string) => boolean
+  currentUser?: {
+    username: string
+    userId: string
+    permissions: string[]
+    actions: string[]
+  }
 }
 
 const allFields: (keyof TrainingData)[] = [
@@ -106,7 +112,9 @@ const allFields: (keyof TrainingData)[] = [
   "area",
 ]
 
-export function TrainingView({ hasActionPermission }: TrainingViewProps) {
+// export function TrainingView({ hasActionPermission }: TrainingViewProps) {
+export function TrainingView(props: TrainingViewProps) {
+  const { hasActionPermission, currentUser } = props
   const [expandedLotes, setExpandedLotes] = useState<string[]>([])
   const [trainingData, setTrainingData] = useState<TrainingData[]>([])
   const [filteredData, setFilteredData] = useState<TrainingData[]>([])
@@ -274,6 +282,11 @@ export function TrainingView({ hasActionPermission }: TrainingViewProps) {
         newarea = "Operaciones"
       }
 
+      const currentTimestamp = new Date().toLocaleString()
+
+      // Use the current user name or default to "Manager" if not provided
+      const userDisplayName = currentUser?.username || "Training"
+
       const response = await fetch("/api/agent-form", {
         method: "PUT",
         headers: {
@@ -286,6 +299,8 @@ export function TrainingView({ hasActionPermission }: TrainingViewProps) {
           estado: newestado,
           area: newarea,
           observaciones: newState === "Rechazado" ? rejectComment : "",
+          log_track: `${newState} From ${userDisplayName} at ${currentTimestamp}`,
+          append_log: true, // Indicador para el backend de que debe añadir al log existente
         }),
       })
 

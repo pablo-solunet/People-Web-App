@@ -71,6 +71,12 @@ interface PeopleData {
 
 interface PeopleViewProps {
   hasActionPermission: (action: string) => boolean
+  currentUser?: {
+    username: string
+    userId: string
+    permissions: string[]
+    actions: string[]
+  }
 }
 
 const allFields: (keyof PeopleData)[] = [
@@ -111,7 +117,9 @@ const allFields: (keyof PeopleData)[] = [
   "documento",
 ]
 
-export function PeopleView({ hasActionPermission }: PeopleViewProps) {
+// export function PeopleView({ hasActionPermission }: PeopleViewProps) {
+export function PeopleView(props: PeopleViewProps) {
+  const { hasActionPermission, currentUser } = props
   const [expandedLotes, setExpandedLotes] = useState<string[]>([])
   const [peopleData, setPeopleData] = useState<PeopleData[]>([])
   const [filteredData, setFilteredData] = useState<PeopleData[]>([])
@@ -286,6 +294,11 @@ export function PeopleView({ hasActionPermission }: PeopleViewProps) {
         newarea = "Operaciones"
       }
 
+      const currentTimestamp = new Date().toLocaleString()
+
+      // Use the current user name or default to "Manager" if not provided
+      const userDisplayName = currentUser?.username || "People"
+
       const response = await fetch("/api/agent-form", {
         method: "PUT",
         headers: {
@@ -298,6 +311,8 @@ export function PeopleView({ hasActionPermission }: PeopleViewProps) {
           legajo: legajo, // Incluir el legajo en la actualización
           documento: documento, // Incluir el documento en la actualización
           observaciones: observaciones, // Incluir el legajo en la actualización
+          log_track: `${newState} From ${userDisplayName} at ${currentTimestamp}`,
+          append_log: true, // Indicador para el backend de que debe añadir al log existente
         }),
       })
 
@@ -528,7 +543,8 @@ export function PeopleView({ hasActionPermission }: PeopleViewProps) {
               <TableHeader>
                 <TableRow className="bg-blue-50 dark:bg-blue-900/30">
                   <TableHead className="font-medium">Lote ID</TableHead>
-                  <TableHead className="font-medium">Cantidad de Entrenamientos</TableHead>
+                  <TableHead className="font-medium">Cantidad de Solicitudes a People
+                    </TableHead>
                   <TableHead className="font-medium">Acciones</TableHead>
                 </TableRow>
               </TableHeader>

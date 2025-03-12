@@ -69,6 +69,12 @@ interface ManagerData {
 
 interface ManagerViewProps {
   hasActionPermission: (action: string) => boolean
+  currentUser?: {
+    username: string
+    userId: string
+    permissions: string[]
+    actions: string[]
+  }
 }
 
 const allFields: (keyof ManagerData)[] = [
@@ -107,7 +113,9 @@ const allFields: (keyof ManagerData)[] = [
   "area",
 ]
 
-export function ManagerView({ hasActionPermission }: ManagerViewProps) {
+// export function ManagerView({ hasActionPermission }: ManagerViewProps) {
+export function ManagerView(props: ManagerViewProps) {
+  const { hasActionPermission, currentUser } = props
   const [expandedLotes, setExpandedLotes] = useState<string[]>([])
   const [managerData, setManagerData] = useState<ManagerData[]>([])
   const [filteredData, setFilteredData] = useState<ManagerData[]>([])
@@ -274,6 +282,11 @@ export function ManagerView({ hasActionPermission }: ManagerViewProps) {
         ;(newestado = "Rechazado"), (newarea = "Operaciones")
       }
 
+      const currentTimestamp = new Date().toLocaleString()
+
+      // Use the current user name or default to "Manager" if not provided
+      const userDisplayName = currentUser?.username || "Manager"
+
       const response = await fetch("/api/agent-form", {
         method: "PUT",
         headers: {
@@ -286,6 +299,8 @@ export function ManagerView({ hasActionPermission }: ManagerViewProps) {
           estado: newestado,
           area: newarea,
           observaciones: newState === "Rechazado" ? rejectComment : "",
+          log_track: `${newState} From ${userDisplayName} at ${currentTimestamp}`,
+          append_log: true, // Indicador para el backend de que debe añadir al log existente
         }),
       })
 
@@ -552,7 +567,7 @@ export function ManagerView({ hasActionPermission }: ManagerViewProps) {
               <TableHeader>
                 <TableRow className="bg-blue-50 dark:bg-blue-900/30">
                   <TableHead className="font-medium">Lote ID</TableHead>
-                  <TableHead className="font-medium">Cantidad de Entrenamientos</TableHead>
+                  <TableHead className="font-medium">Cantidad de Autorizaciones</TableHead>
                   <TableHead className="font-medium">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
