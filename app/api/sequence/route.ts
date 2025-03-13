@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/bigQueryConfig"
+import { auth, bigquery, projectId, datasetId, table_agent_form } from "@/lib/bigQueryConfig"
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
 
     const queryForLastId = `
       SELECT requisition_id
-      FROM \`${process.env.BIGQUERY_PROJECT_ID}.${process.env.BIGQUERY_DATASET_ID || "z_people"}.${process.env.BIGQUERY_TABLE_AGENT_FORM || "agent_form_data"}\`
+      FROM \`${projectId}.${datasetId}.${table_agent_form}\`
       ORDER BY CAST(REGEXP_EXTRACT(requisition_id, r'RQ-0*([0-9]+)') AS INT64) DESC
       LIMIT 1
     `
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     }
 
     const response = await fetch(
-      `https://bigquery.googleapis.com/bigquery/v2/projects/${process.env.BIGQUERY_PROJECT_ID}/queries`,
+      `https://bigquery.googleapis.com/bigquery/v2/projects/${projectId}/queries`,
       {
         method: "POST",
         headers,

@@ -1,6 +1,5 @@
-import { bigquery, projectId } from "@/lib/bigQueryConfig"
+import { bigquery, projectId, datasetId, table_users, table_user_permissions } from "@/lib/bigQueryConfig"
 import { NextResponse } from 'next/server';
-import crypto from "crypto"
 
 export async function POST(request: Request) {
   try {
@@ -9,7 +8,7 @@ export async function POST(request: Request) {
     // evitar inyección SQL.
     const userQuery = `
       SELECT user_id
-      FROM \`${projectId}.z_people.users\`
+      FROM \`${projectId}.${datasetId}.${table_users}\`
       WHERE username = "${username}" AND password = "${password}"
     `;
 
@@ -31,7 +30,7 @@ export async function POST(request: Request) {
 
       const permissionsQuery = `
         SELECT resource, CONCAT(resource, '-', action) as action
-        FROM \`${projectId}.z_people.user_permissions\`
+        FROM \`${projectId}.${datasetId}.${table_user_permissions}\`
         WHERE user_id = "${userId}"
         GROUP BY 1, 2
       `;
