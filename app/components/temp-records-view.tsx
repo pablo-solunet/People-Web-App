@@ -54,7 +54,13 @@ export function TempRecordsView({ records, onDelete, onConfirmAll, onCancelAll, 
       const ids = await handleGenerateIds(records.length)
 
       // Generar un único lote_id para todos los registros
-      const batchId = `LOTE-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+      // const batchId = `LOTE-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+
+      // Nuevo LOTE ID
+      const date_ = new Date();
+      const formattedDate_ = date_.toISOString().slice(0, 10).replace(/-/g, ''); // AAAAMMDD
+      const randomNumber_ = Math.floor(Math.random() * 10).toString().padStart(2, '0'); // Número aleatorio de 3 dígitos
+      const batchId = `LOTE-${formattedDate_}-${randomNumber_}`;
 
       // Asignar el mismo lote_id a todos los registros
       const recordsWithBatchId = records.map((record, index) => ({
@@ -100,7 +106,7 @@ export function TempRecordsView({ records, onDelete, onConfirmAll, onCancelAll, 
           <TableRow>
             <TableHead className="w-[50px]">Índice</TableHead>
             {Object.keys(records[0])
-              .filter((key) => key !== "id_reg" && key !== "lote_id" && key !== "requisition_id") // No mostrar lote_id en la tabla
+              .filter((key) => key !== "id_reg" && key !== "lote_id" && key !== "requisition_id" && key !== "updated_at" && key !== "quantity" && key !== "area" && key !== "estado") // No mostrar lote_id en la tabla
               .map((key) => (
                 <TableHead key={key}>{key}</TableHead>
               ))}
@@ -112,12 +118,12 @@ export function TempRecordsView({ records, onDelete, onConfirmAll, onCancelAll, 
             <TableRow key={record.id_reg}>
               <TableCell>{index + 1}</TableCell>
               {Object.entries(record)
-                .filter(([key]) => key !== "id_reg" && key !== "lote_id" && key !== "requisition_id")
+                .filter(([key]) => key !== "id_reg" && key !== "lote_id" && key !== "requisition_id" && key !== "updated_at" && key !== "quantity" && key !== "area" && key !== "estado")
                 .map(([key, value]) => (
                   <TableCell key={key}>{value}</TableCell>
                 ))}
               <TableCell>
-                <Button variant="outline" size="sm" onClick={() => onDelete(record.id_reg)}>
+                <Button className="mb-6 bg-red-100 hover:bg-red-100 text-blue-700 shadow-md hover:shadow-lg duration-300 ease-in-out" variant="outline" size="sm" onClick={() => onDelete(record.id_reg)}>
                   Borrar
                 </Button>
               </TableCell>

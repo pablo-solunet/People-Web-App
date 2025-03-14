@@ -200,7 +200,7 @@ export function AgentForm({ onSubmit, onReturn, hasActionPermission }: AgentForm
   return (
     <form onSubmit={handleSubmit} className="space-y-6 p-6 bg-background text-foreground">
       <h2 className="text-2xl font-bold mb-6">Formulario para Agentes</h2>
-      <Button type="button" variant="outline" onClick={onReturn} className="mb-6">
+      <Button type="button" variant="outline" onClick={onReturn} className="mb-6 bg-blue-100 hover:bg-blue-200 text-blue-700 shadow-md hover:shadow-lg transition-all duration-300 ease-in-out">
         Volver al formulario inicial
       </Button>
       

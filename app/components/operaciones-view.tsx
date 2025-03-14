@@ -167,7 +167,7 @@ export function OperacionesView(props: OperacionesViewProps) {
 
   useEffect(() => {
     filterAndSearchData()
-  }, [operacionesData, searchTerm, filterField, filterValue]) //Corrected dependency array
+  }, [operacionesData, searchTerm, filterField, filterValue])
 
   const fetchOperacionesData = async () => {
     setIsLoading(true)
@@ -224,16 +224,8 @@ export function OperacionesView(props: OperacionesViewProps) {
           return record as OperacionesData
         })
 
-        // Actualizar el estado una sola vez con todos los datos
         setOperacionesData(formattedData)
 
-        //  // Mostrar una única notificación después de que todos los datos se hayan procesado
-        //   setTimeout(() => {
-        //     toast({
-        //       title: "Datos actualizados",
-        //       description: "Los datos de operaciones han sido actualizados exitosamente.",
-        //     })
-        //   }, 5000)
       } else {
         console.error("Unexpected data structure:", data)
         setOperacionesData([])
@@ -312,8 +304,6 @@ export function OperacionesView(props: OperacionesViewProps) {
       }
 
       const currentTimestamp = new Date().toLocaleString()
-
-      // Use the current user name or default to "Manager" if not provided
       const userDisplayName = currentUser?.username || "Operaciones"
 
       const response = await fetch("/api/agent-form", {
@@ -459,11 +449,19 @@ export function OperacionesView(props: OperacionesViewProps) {
 
       if (result.success) {
         // Actualizar el estado local eliminando el registro
-        setOperacionesData((prevData) => prevData.filter((record) => record.id_reg !== id_reg))
+        setOperacionesData((prevData) => 
+          prevData.filter((record) => record.id_reg !== id_reg)
+        );
+
+        // Update the main data state
+        setOperacionesData((prevData) =>
+          prevData.filter((record) => record.id_reg !== id_reg))
+
         toast({
           title: "Éxito",
           description: `Registro ${id_reg} eliminado correctamente.`,
-        })
+        });
+        // Close all dialogs
         setIsEditDialogOpen(false) // Cerrar el diálogo de edición
         setIsDeleteAlertOpen(false) // Cerrar la alerta de confirmación
       } else {
@@ -479,6 +477,7 @@ export function OperacionesView(props: OperacionesViewProps) {
     } finally {
       setRecordToDelete(null) // Limpiar el registro a eliminar
       setIsDeleting(false)
+      setEditingRecord(null) // Clear the editing record state
     }
   }
 
@@ -822,7 +821,8 @@ export function OperacionesView(props: OperacionesViewProps) {
               {isDeleting ? <RefreshCw className="animate-spin h-4 w-4" /> : "Cancelar"}
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault()
                 if (recordToDelete) {
                   handleDelete(recordToDelete)
                 }
