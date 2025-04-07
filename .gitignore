@@ -13,6 +13,7 @@ credenciales/
 BACKUP/
 .env
 .env.local
+.env.development
 credencialesbq.json
 test.js
 tailwind.config copy.js
