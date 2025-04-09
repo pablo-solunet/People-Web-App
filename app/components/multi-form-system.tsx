@@ -67,6 +67,9 @@ export interface TempRecord {
   estado: string
   observaciones: string
   area: string
+
+  requiereEmailCorpo: string
+
   [key: string]: string | undefined
 }
 
@@ -132,6 +135,8 @@ export function MultiFormSystem() {
       estado: data.estado || "",
       observaciones: data.observaciones || "",
       area: data.area || "",
+
+      requiereEmailCorpo: data.requiereEmailCorpo || "",
       ...data,
     }))
 

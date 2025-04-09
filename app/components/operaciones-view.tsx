@@ -1,5 +1,7 @@
 "use client"
 
+import { DialogFooter } from "@/components/ui/dialog"
+
 import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/components/ui/use-toast"
+import { formatDateTime } from "@/lib/date-utils"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,20 +23,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { columnDisplayNames } from "@/lib/column-display-names"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { gapFechaIngreso, gapOperacionesEdit, paises, canales, emailCorpoOption } from "@/lib/appConfig"
+import { TIME_SLOTS } from "@/lib/time-slots"
 
-const dias_para_Editar = process.env.DIAS_PARA_EDITAR || Number.parseInt("20")
-console.log(typeof dias_para_Editar)
+const puedeEditar = gapOperacionesEdit
+const dias_para_Editar = gapFechaIngreso
 
 interface OperacionesData {
   id_reg: string
@@ -73,6 +71,9 @@ interface OperacionesData {
   estado: string
   observaciones: string
   area: string
+
+  requiereEmailCorpo: string
+
   comentario: string
 
   legajo: string
@@ -125,6 +126,7 @@ const allFields: (keyof OperacionesData)[] = [
   "estado",
   "observaciones",
   "area",
+  "requiereEmailCorpo",
 ]
 
 // export function OperacionesView({ hasActionPermission }: OperacionesViewProps) {
@@ -148,6 +150,7 @@ export function OperacionesView(props: OperacionesViewProps) {
     "legajo",
     "estado",
     "observaciones",
+    "requiereEmailCorpo",
   ])
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
@@ -218,14 +221,25 @@ export function OperacionesView(props: OperacionesViewProps) {
               "area",
               "legajo",
               "documento",
+              "approvedFromIP",
+              "log_track",
+              "requiereEmailCorpo",
             ]
             record[fieldNames[index]] = field.v
           })
           return record as OperacionesData
         })
 
-        setOperacionesData(formattedData)
+        // Agregar este log para verificar si el campo está presente en los datos
+        // console.log(
+        //   "Datos formateados:",
+        //   formattedData.map((item) => ({
+        //     id: item.id_reg,
+        //     requiereEmailCorpo: item.requiereEmailCorpo,
+        //   })),
+        // )
 
+        setOperacionesData(formattedData)
       } else {
         console.error("Unexpected data structure:", data)
         setOperacionesData([])
@@ -353,6 +367,8 @@ export function OperacionesView(props: OperacionesViewProps) {
 
   // Modificar la función handleEditSubmit para incluir solo los campos permitidos
   const handleEdit = (record: OperacionesData) => {
+    console.log("Registro a editar:", record)
+    console.log("Campo requiereEmailCorpo:", record.requiereEmailCorpo)
     setEditingRecord(record)
     setIsEditDialogOpen(true)
   }
@@ -381,11 +397,23 @@ export function OperacionesView(props: OperacionesViewProps) {
     "domingo_in",
     "domingo_out",
     "cargaHoraria",
+    "requiereEmailCorpo",
   ]
 
   const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!editingRecord) return
+
+    // Validar fecha mínima antes de enviar
+    if (editingRecord.fechaIngreso && new Date(editingRecord.fechaIngreso) < new Date(getMinimumDate())) {
+      toast({
+        title: "Error",
+        description: `La fecha debe ser al menos ${dias_para_Editar} días después de hoy`,
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsSaving(true)
 
     // Crear un objeto con solo los campos editables
@@ -449,18 +477,15 @@ export function OperacionesView(props: OperacionesViewProps) {
 
       if (result.success) {
         // Actualizar el estado local eliminando el registro
-        setOperacionesData((prevData) => 
-          prevData.filter((record) => record.id_reg !== id_reg)
-        );
+        setOperacionesData((prevData) => prevData.filter((record) => record.id_reg !== id_reg))
 
         // Update the main data state
-        setOperacionesData((prevData) =>
-          prevData.filter((record) => record.id_reg !== id_reg))
+        setOperacionesData((prevData) => prevData.filter((record) => record.id_reg !== id_reg))
 
         toast({
           title: "Éxito",
           description: `Registro ${id_reg} eliminado correctamente.`,
-        });
+        })
         // Close all dialogs
         setIsEditDialogOpen(false) // Cerrar el diálogo de edición
         setIsDeleteAlertOpen(false) // Cerrar la alerta de confirmación
@@ -487,12 +512,20 @@ export function OperacionesView(props: OperacionesViewProps) {
     currentPage * itemsPerPage,
   )
 
-  // Funcion para Calcular 20 dias antes del Ingreso
+  // Funcion para Calcular dias antes del Ingreso
   const canEditRecord = (fechaIngreso: string): boolean => {
     const today = new Date()
     const fecha = new Date(fechaIngreso)
     const diffDays = (fecha.getTime() - today.getTime()) / (1000 * 3600 * 24)
-    return diffDays >= Number(dias_para_Editar)
+    return diffDays >= Number(puedeEditar)
+  }
+
+  // Funcion para obtener la fecha mínima permitida (similar a form-agent.tsx)
+  const getMinimumDate = () => {
+    const today = new Date()
+    const minDate = new Date(today)
+    minDate.setDate(today.getDate() + Number(dias_para_Editar))
+    return minDate.toISOString().split("T")[0]
   }
 
   // Dentro del componente, antes del return:
@@ -520,7 +553,98 @@ export function OperacionesView(props: OperacionesViewProps) {
     }
   }
 
-  return (
+  const calculateWorkHours = (startTime: string, endTime: string): number => {
+    if (startTime === "Franco" || endTime === "Franco") return 0
+
+    // Convertir los horarios a minutos para facilitar el cálculo
+    const getMinutes = (time: string): number => {
+      const [hours, minutes] = time.split(":").map(Number)
+      return hours * 60 + minutes
+    }
+
+    const startMinutes = getMinutes(startTime)
+    const endMinutes = getMinutes(endTime)
+
+    // Si la hora de fin es menor que la de inicio, asumimos que cruza la medianoche
+    let diffMinutes = endMinutes - startMinutes
+    if (diffMinutes < 0) {
+      diffMinutes += 24 * 60 // Añadir un día completo en minutos
+    }
+
+    // Convertir minutos a horas con un decimal
+    return Math.round(diffMinutes / 6) / 10 // Redondear a 1 decimal
+  }
+
+  const updateCargaHoraria = (record: OperacionesData): string => {
+    const days = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]
+    let totalHours = 0
+
+    days.forEach((day) => {
+      const startTime = record[`${day}_in` as keyof OperacionesData] as string
+      const endTime = record[`${day}_out` as keyof OperacionesData] as string
+
+      if (startTime && endTime && startTime !== "Franco") {
+        totalHours += calculateWorkHours(startTime, endTime)
+      }
+    })
+
+    return totalHours.toFixed(1)
+  }
+
+  const handleHorarioDiaChange = (dia: string, type: "in" | "out", value: string) => {
+    if (editingRecord) {
+      const newRecord = { ...editingRecord }
+
+      // Actualizar el valor seleccionado
+      newRecord[`${dia}_${type}` as keyof OperacionesData] = value
+
+      // Si el "in" es "Franco", el "out" también debe ser "Franco"
+      if (type === "in" && value === "Franco") {
+        newRecord[`${dia}_out` as keyof OperacionesData] = "Franco"
+      }
+
+      // Actualizar la carga horaria automáticamente
+      newRecord.cargaHoraria = updateCargaHoraria(newRecord)
+
+      setEditingRecord(newRecord)
+    }
+  }
+
+  // Componente personalizado para el selector de horarios
+  const TimeSelector = ({
+    value,
+    onChange,
+    id,
+    disabled = false,
+    includesFranco = false,
+  }: {
+    value: string
+    onChange: (value: string) => void
+    id: string
+    disabled?: boolean
+    includesFranco?: boolean
+  }) => {
+    return (
+      <div className="relative">
+        <select
+          id={id}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+          className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 border-blue-200 dark:border-blue-800"
+        >
+          {includesFranco && <option value="Franco">Franco</option>}
+          {TIME_SLOTS.map((slot) => (
+            <option key={slot} value={slot}>
+              {slot}
+            </option>
+          ))}
+        </select>
+      </div>
+    )
+  }
+
+return (
     <div className="space-y-4">
       <Card className="border-blue-100 dark:border-blue-800 shadow-blue-sm dark:shadow-none">
         <CardHeader className="pb-3">
@@ -734,7 +858,7 @@ export function OperacionesView(props: OperacionesViewProps) {
                                             {record.estado}
                                           </Badge>
                                         ) : field === "created_at" || field === "updated_at" ? (
-                                          new Date(Number(record[field])).toLocaleString()
+                                          formatDateTime(record[field])
                                         ) : (
                                           record[field]
                                         )}
@@ -850,12 +974,21 @@ export function OperacionesView(props: OperacionesViewProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="pais">País</Label>
-                    <Input
-                      id="pais"
-                      value={editingRecord.pais}
-                      onChange={(e) => setEditingRecord({ ...editingRecord, pais: e.target.value })}
-                      className="border-blue-200 dark:border-blue-800"
-                    />
+                    <Select
+                      value={editingRecord.pais || ""}
+                      onValueChange={(value) => setEditingRecord({ ...editingRecord, pais: value })}
+                    >
+                      <SelectTrigger id="pais" className="border-blue-200 dark:border-blue-800">
+                        <SelectValue placeholder="Seleccione un país" />
+                      </SelectTrigger>
+                      <SelectContent position="popper">
+                        {paises.map((pais) => (
+                          <SelectItem key={pais} value={pais}>
+                            {pais}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label htmlFor="fechaIngreso">Fecha de Ingreso</Label>
@@ -864,8 +997,19 @@ export function OperacionesView(props: OperacionesViewProps) {
                       type="date"
                       value={editingRecord.fechaIngreso}
                       onChange={(e) => setEditingRecord({ ...editingRecord, fechaIngreso: e.target.value })}
-                      className="border-blue-200 dark:border-blue-800"
+                      min={getMinimumDate()}
+                      className={`border-blue-200 dark:border-blue-800 ${
+                        editingRecord.fechaIngreso && new Date(editingRecord.fechaIngreso) < new Date(getMinimumDate())
+                          ? "border-red-300"
+                          : ""
+                      }`}
                     />
+                    {editingRecord.fechaIngreso &&
+                      new Date(editingRecord.fechaIngreso) < new Date(getMinimumDate()) && (
+                        <p className="text-sm text-red-500">
+                          La fecha debe ser al menos {dias_para_Editar} días después de hoy
+                        </p>
+                      )}
                   </div>
                   <div>
                     <Label htmlFor="cliente">Cliente</Label>
@@ -878,12 +1022,21 @@ export function OperacionesView(props: OperacionesViewProps) {
                   </div>
                   <div>
                     <Label htmlFor="canal">Canal</Label>
-                    <Input
-                      id="canal"
-                      value={editingRecord.canal}
-                      onChange={(e) => setEditingRecord({ ...editingRecord, canal: e.target.value })}
-                      className="border-blue-200 dark:border-blue-800"
-                    />
+                    <Select
+                      value={editingRecord.canal || ""}
+                      onValueChange={(value) => setEditingRecord({ ...editingRecord, canal: value })}
+                    >
+                      <SelectTrigger id="canal" className="border-blue-200 dark:border-blue-800">
+                        <SelectValue placeholder="Seleccione un canal" />
+                      </SelectTrigger>
+                      <SelectContent position="popper">
+                        {canales.map((canal) => (
+                          <SelectItem key={canal} value={canal}>
+                            {canal}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>
@@ -897,28 +1050,24 @@ export function OperacionesView(props: OperacionesViewProps) {
                     <Input
                       id="cargaHoraria"
                       value={editingRecord.cargaHoraria}
-                      onChange={(e) => setEditingRecord({ ...editingRecord, cargaHoraria: e.target.value })}
-                      className="border-blue-200 dark:border-blue-800"
+                      readOnly
+                      className="border-blue-200 dark:border-blue-800 bg-gray-50 dark:bg-gray-800"
                     />
                   </div>
                   <div>
                     <Label htmlFor="horarioIn">Horario Entrada</Label>
-                    <Input
+                    <TimeSelector
                       id="horarioIn"
-                      type="time"
                       value={editingRecord.horarioIn}
-                      onChange={(e) => setEditingRecord({ ...editingRecord, horarioIn: e.target.value })}
-                      className="border-blue-200 dark:border-blue-800"
+                      onChange={(value) => setEditingRecord({ ...editingRecord, horarioIn: value })}
                     />
                   </div>
                   <div>
                     <Label htmlFor="horarioOut">Horario Salida</Label>
-                    <Input
+                    <TimeSelector
                       id="horarioOut"
-                      type="time"
                       value={editingRecord.horarioOut}
-                      onChange={(e) => setEditingRecord({ ...editingRecord, horarioOut: e.target.value })}
-                      className="border-blue-200 dark:border-blue-800"
+                      onChange={(value) => setEditingRecord({ ...editingRecord, horarioOut: value })}
                     />
                   </div>
                 </div>
@@ -936,24 +1085,23 @@ export function OperacionesView(props: OperacionesViewProps) {
                         <Label htmlFor="lunes_in" className="text-xs">
                           Entrada
                         </Label>
-                        <Input
+                        <TimeSelector
                           id="lunes_in"
-                          type="time"
                           value={editingRecord.lunes_in}
-                          onChange={(e) => setEditingRecord({ ...editingRecord, lunes_in: e.target.value })}
-                          className="border-blue-200 dark:border-blue-800"
+                          onChange={(value) => handleHorarioDiaChange("lunes", "in", value)}
+                          includesFranco={true}
                         />
                       </div>
                       <div>
                         <Label htmlFor="lunes_out" className="text-xs">
                           Salida
                         </Label>
-                        <Input
+                        <TimeSelector
                           id="lunes_out"
-                          type="time"
                           value={editingRecord.lunes_out}
-                          onChange={(e) => setEditingRecord({ ...editingRecord, lunes_out: e.target.value })}
-                          className="border-blue-200 dark:border-blue-800"
+                          onChange={(value) => handleHorarioDiaChange("lunes", "out", value)}
+                          disabled={editingRecord.lunes_in === "Franco"}
+                          includesFranco={true}
                         />
                       </div>
                     </div>
@@ -967,24 +1115,23 @@ export function OperacionesView(props: OperacionesViewProps) {
                         <Label htmlFor="martes_in" className="text-xs">
                           Entrada
                         </Label>
-                        <Input
+                        <TimeSelector
                           id="martes_in"
-                          type="time"
                           value={editingRecord.martes_in}
-                          onChange={(e) => setEditingRecord({ ...editingRecord, martes_in: e.target.value })}
-                          className="border-blue-200 dark:border-blue-800"
+                          onChange={(value) => handleHorarioDiaChange("martes", "in", value)}
+                          includesFranco={true}
                         />
                       </div>
                       <div>
                         <Label htmlFor="martes_out" className="text-xs">
                           Salida
                         </Label>
-                        <Input
+                        <TimeSelector
                           id="martes_out"
-                          type="time"
                           value={editingRecord.martes_out}
-                          onChange={(e) => setEditingRecord({ ...editingRecord, martes_out: e.target.value })}
-                          className="border-blue-200 dark:border-blue-800"
+                          onChange={(value) => handleHorarioDiaChange("martes", "out", value)}
+                          disabled={editingRecord.martes_in === "Franco"}
+                          includesFranco={true}
                         />
                       </div>
                     </div>
@@ -998,24 +1145,23 @@ export function OperacionesView(props: OperacionesViewProps) {
                         <Label htmlFor="miercoles_in" className="text-xs">
                           Entrada
                         </Label>
-                        <Input
+                        <TimeSelector
                           id="miercoles_in"
-                          type="time"
                           value={editingRecord.miercoles_in}
-                          onChange={(e) => setEditingRecord({ ...editingRecord, miercoles_in: e.target.value })}
-                          className="border-blue-200 dark:border-blue-800"
+                          onChange={(value) => handleHorarioDiaChange("miercoles", "in", value)}
+                          includesFranco={true}
                         />
                       </div>
                       <div>
                         <Label htmlFor="miercoles_out" className="text-xs">
                           Salida
                         </Label>
-                        <Input
+                        <TimeSelector
                           id="miercoles_out"
-                          type="time"
                           value={editingRecord.miercoles_out}
-                          onChange={(e) => setEditingRecord({ ...editingRecord, miercoles_out: e.target.value })}
-                          className="border-blue-200 dark:border-blue-800"
+                          onChange={(value) => handleHorarioDiaChange("miercoles", "out", value)}
+                          disabled={editingRecord.miercoles_in === "Franco"}
+                          includesFranco={true}
                         />
                       </div>
                     </div>
@@ -1029,24 +1175,23 @@ export function OperacionesView(props: OperacionesViewProps) {
                         <Label htmlFor="jueves_in" className="text-xs">
                           Entrada
                         </Label>
-                        <Input
+                        <TimeSelector
                           id="jueves_in"
-                          type="time"
                           value={editingRecord.jueves_in}
-                          onChange={(e) => setEditingRecord({ ...editingRecord, jueves_in: e.target.value })}
-                          className="border-blue-200 dark:border-blue-800"
+                          onChange={(value) => handleHorarioDiaChange("jueves", "in", value)}
+                          includesFranco={true}
                         />
                       </div>
                       <div>
                         <Label htmlFor="jueves_out" className="text-xs">
                           Salida
                         </Label>
-                        <Input
+                        <TimeSelector
                           id="jueves_out"
-                          type="time"
                           value={editingRecord.jueves_out}
-                          onChange={(e) => setEditingRecord({ ...editingRecord, jueves_out: e.target.value })}
-                          className="border-blue-200 dark:border-blue-800"
+                          onChange={(value) => handleHorarioDiaChange("jueves", "out", value)}
+                          disabled={editingRecord.jueves_in === "Franco"}
+                          includesFranco={true}
                         />
                       </div>
                     </div>
@@ -1060,24 +1205,23 @@ export function OperacionesView(props: OperacionesViewProps) {
                         <Label htmlFor="viernes_in" className="text-xs">
                           Entrada
                         </Label>
-                        <Input
+                        <TimeSelector
                           id="viernes_in"
-                          type="time"
                           value={editingRecord.viernes_in}
-                          onChange={(e) => setEditingRecord({ ...editingRecord, viernes_in: e.target.value })}
-                          className="border-blue-200 dark:border-blue-800"
+                          onChange={(value) => handleHorarioDiaChange("viernes", "in", value)}
+                          includesFranco={true}
                         />
                       </div>
                       <div>
                         <Label htmlFor="viernes_out" className="text-xs">
                           Salida
                         </Label>
-                        <Input
+                        <TimeSelector
                           id="viernes_out"
-                          type="time"
                           value={editingRecord.viernes_out}
-                          onChange={(e) => setEditingRecord({ ...editingRecord, viernes_out: e.target.value })}
-                          className="border-blue-200 dark:border-blue-800"
+                          onChange={(value) => handleHorarioDiaChange("viernes", "out", value)}
+                          disabled={editingRecord.viernes_in === "Franco"}
+                          includesFranco={true}
                         />
                       </div>
                     </div>
@@ -1091,24 +1235,23 @@ export function OperacionesView(props: OperacionesViewProps) {
                         <Label htmlFor="sabado_in" className="text-xs">
                           Entrada
                         </Label>
-                        <Input
+                        <TimeSelector
                           id="sabado_in"
-                          type="time"
                           value={editingRecord.sabado_in}
-                          onChange={(e) => setEditingRecord({ ...editingRecord, sabado_in: e.target.value })}
-                          className="border-blue-200 dark:border-blue-800"
+                          onChange={(value) => handleHorarioDiaChange("sabado", "in", value)}
+                          includesFranco={true}
                         />
                       </div>
                       <div>
                         <Label htmlFor="sabado_out" className="text-xs">
                           Salida
                         </Label>
-                        <Input
+                        <TimeSelector
                           id="sabado_out"
-                          type="time"
                           value={editingRecord.sabado_out}
-                          onChange={(e) => setEditingRecord({ ...editingRecord, sabado_out: e.target.value })}
-                          className="border-blue-200 dark:border-blue-800"
+                          onChange={(value) => handleHorarioDiaChange("sabado", "out", value)}
+                          disabled={editingRecord.sabado_in === "Franco"}
+                          includesFranco={true}
                         />
                       </div>
                     </div>
@@ -1122,24 +1265,23 @@ export function OperacionesView(props: OperacionesViewProps) {
                         <Label htmlFor="domingo_in" className="text-xs">
                           Entrada
                         </Label>
-                        <Input
+                        <TimeSelector
                           id="domingo_in"
-                          type="time"
                           value={editingRecord.domingo_in}
-                          onChange={(e) => setEditingRecord({ ...editingRecord, domingo_in: e.target.value })}
-                          className="border-blue-200 dark:border-blue-800"
+                          onChange={(value) => handleHorarioDiaChange("domingo", "in", value)}
+                          includesFranco={true}
                         />
                       </div>
                       <div>
                         <Label htmlFor="domingo_out" className="text-xs">
                           Salida
                         </Label>
-                        <Input
+                        <TimeSelector
                           id="domingo_out"
-                          type="time"
                           value={editingRecord.domingo_out}
-                          onChange={(e) => setEditingRecord({ ...editingRecord, domingo_out: e.target.value })}
-                          className="border-blue-200 dark:border-blue-800"
+                          onChange={(value) => handleHorarioDiaChange("domingo", "out", value)}
+                          disabled={editingRecord.domingo_in === "Franco"}
+                          includesFranco={true}
                         />
                       </div>
                     </div>
@@ -1159,6 +1301,25 @@ export function OperacionesView(props: OperacionesViewProps) {
                     className="border-blue-200 dark:border-blue-800"
                   />
                 </div>
+
+                <div>
+                  <Label htmlFor="requiereEmailCorpo">Requiere Email Corporativo</Label>
+                  <Select
+                    value={editingRecord.requiereEmailCorpo || ""}
+                    onValueChange={(value) => setEditingRecord({ ...editingRecord, requiereEmailCorpo: value })}
+                  >
+                    <SelectTrigger id="requiereEmailCorpo" className="border-blue-200 dark:border-blue-800">
+                      <SelectValue placeholder="Seleccione una opción" />
+                    </SelectTrigger>
+                    <SelectContent position="popper">
+                      {emailCorpoOption.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>                
               </div>
 
               <DialogFooter className="flex justify-between">
@@ -1198,4 +1359,3 @@ export function OperacionesView(props: OperacionesViewProps) {
     </div>
   )
 }
-

@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { columnDisplayNames } from "@/lib/column-display-names"
+import { formatDateTime, formatDate } from "@/lib/date-utils"
 
 interface AgentFormData {
   id_reg: string
@@ -262,7 +263,7 @@ export function StatusView({ records = [], onReload }: StatusViewProps) {
     }
   }
 
-  return (
+ return (
     <div className="space-y-4">
       <Card className="border-blue-100 dark:border-blue-800 shadow-blue-sm dark:shadow-none">
         <CardHeader className="pb-3">
@@ -474,7 +475,7 @@ export function StatusView({ records = [], onReload }: StatusViewProps) {
                                   >
                                     {visibleFields.map((field) => (
                                       <TableCell key={`${record.id_reg}-${field}`} className="py-2">
-                                        {field === "estado" ? (
+                                        {/* {field === "estado" ? (
                                           <Badge className={`${getStatusBadgeClass(record.estado)}`}>
                                             {record.estado}
                                           </Badge>
@@ -482,7 +483,16 @@ export function StatusView({ records = [], onReload }: StatusViewProps) {
                                           new Date(Number(record[field])).toLocaleString()
                                         ) : (
                                           record[field]
-                                        )}
+                                        )} */}
+                                        {
+                                          field === "estado" ? (
+                                            <Badge className={`${getStatusBadgeClass(record.estado)}`}>{record.estado}</Badge>
+                                          ) : field === "created_at" || field === "updated_at" ? (
+                                            formatDateTime(record[field])
+                                          ) : (
+                                            record[field]
+                                          )
+                                        }
                                       </TableCell>
                                     ))}
                                   </TableRow>

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
+import { formatDateTime, formatDate } from "@/lib/date-utils"
 import { useToast } from "@/components/ui/use-toast"
 import {
   AlertDialog,
@@ -610,7 +611,7 @@ export function PeopleView(props: PeopleViewProps) {
                                   >
                                     {visibleFields.map((field) => (
                                       <TableCell key={`${record.id_reg}-${field}`} className="py-2">
-                                        {field === "estado" ? (
+                                        {/* {field === "estado" ? (
                                           <Badge className={`${getStatusBadgeClass(record.estado)}`}>
                                             {record.estado}
                                           </Badge>
@@ -618,7 +619,16 @@ export function PeopleView(props: PeopleViewProps) {
                                           new Date(Number(record[field])).toLocaleString()
                                         ) : (
                                           record[field]
-                                        )}
+                                        )} */}
+                                        {
+                                          field === "estado" ? (
+                                            <Badge className={`${getStatusBadgeClass(record.estado)}`}>{record.estado}</Badge>
+                                          ) : field === "created_at" || field === "updated_at" ? (
+                                            formatDateTime(record[field])
+                                          ) : (
+                                            record[field]
+                                          )
+                                        }
                                       </TableCell>
                                     ))}
                                     <TableCell>

@@ -1,10 +1,14 @@
+"use client"
+
 import { useState, FormEvent, useEffect } from 'react'
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { TIME_SLOTS } from '@/lib/time-slots'
+import { gapFechaIngreso, paises, canales, jobTitles } from '@/lib/appConfig'
 
 interface AgentFormProps {
   onSubmit: (data: Record<string, string>) => void
@@ -14,11 +18,12 @@ interface AgentFormProps {
 
 export function AgentForm({ onSubmit, onReturn, hasActionPermission }: AgentFormProps) {
   const [isCustomJobTitle, setIsCustomJobTitle] = useState(false)
-  const paises = ['Argentina', 'Chile', 'Paraguay', 'Uruguay', 'Colombia', 'Venezuela', 'Brasil']
+  // const paises = ['Argentina', 'Chile', 'Paraguay', 'Mexico', 'Uruguay', 'Colombia', 'Venezuela', 'Brasil']
+  // const canales = ['Digital', 'Telefónico', 'Presencial']
+  // const jobTitles = ["Customer Service Agent"]
+  
   const estados = ["Pendiente", "Rechazado", "Completado"]
-  const canales = ['Digital', 'Telefónico', 'Presencial']
   const areas = ["People", "Training", "Operaciones", "Manager"]
-  const jobTitles = ["Customer Service Agent"]
   
   const [formData, setFormData] = useState({
     pais: '',
@@ -36,7 +41,8 @@ export function AgentForm({ onSubmit, onReturn, hasActionPermission }: AgentForm
     estado: 'Pendiente',
     area: 'Training',
     quantity: '1',
-    cargaHoraria: '0 horas'
+    cargaHoraria: '0 horas',
+    requiereEmailCorpo: "No",
   })
 
   const [horariosDias, setHorariosDias] = useState({
@@ -65,7 +71,7 @@ export function AgentForm({ onSubmit, onReturn, hasActionPermission }: AgentForm
   const getMinimumDate = () => {
     const today = new Date()
     const minDate = new Date(today)
-    minDate.setDate(today.getDate() + 20)
+    minDate.setDate(today.getDate() + gapFechaIngreso)
     return minDate.toISOString().split("T")[0]
   }
 
@@ -113,7 +119,7 @@ export function AgentForm({ onSubmit, onReturn, hasActionPermission }: AgentForm
     formData.fechaIngreso &&
     new Date(formData.fechaIngreso) < new Date(getMinimumDate())
   ) {
-    alert("La fecha debe ser al menos 20 días después de hoy")
+    alert(`La fecha debe ser al menos ${gapFechaIngreso} días después de hoy`)
     document.getElementById("fechaIngreso")?.focus()
     return // Prevenir envío del formulario
   }
@@ -152,7 +158,8 @@ export function AgentForm({ onSubmit, onReturn, hasActionPermission }: AgentForm
       estado: 'Pendiente',
       area: 'Training',
       quantity: '1',
-      cargaHoraria: '0 horas'
+      cargaHoraria: '0 horas',
+      requiereEmailCorpo: "No",
     })
     document.getElementById("pais")?.focus()
     ;
@@ -204,8 +211,8 @@ export function AgentForm({ onSubmit, onReturn, hasActionPermission }: AgentForm
         Volver al formulario inicial
       </Button>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="space-y-2">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="space-y-2">
           <Label htmlFor="pais">
             País de Contratacion <span className="text-red-500">*</span>
           </Label>
@@ -245,13 +252,33 @@ export function AgentForm({ onSubmit, onReturn, hasActionPermission }: AgentForm
               }`}
               required
           />
-           {/* {!formData.fechaIngreso} */}
-           {!canBypassDateRestriction &&
+          {/* {!formData.fechaIngreso} */}
+          {!canBypassDateRestriction &&
             formData.fechaIngreso &&
             new Date(formData.fechaIngreso) < new Date(getMinimumDate()) && (
-              <p className="text-sm text-red-500">La fecha debe ser al menos 20 días después de hoy</p>
+              <p className="text-sm text-red-500">La fecha debe ser al menos {gapFechaIngreso} días después de hoy</p>
             )}
         </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="requiereEmailCorpo">¿Requiere Email de Solu?</Label>
+          <RadioGroup
+            id="requiereEmailCorpo"
+            value={formData.requiereEmailCorpo}
+            onValueChange={(value) => handleInputChange("requiereEmailCorpo", value)}
+            className="flex items-center gap-4 pt-2"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="Si" id="email-si" />
+              <Label htmlFor="email-si">Si</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="No" id="email-no" />
+              <Label htmlFor="email-no">No</Label>
+            </div>
+          </RadioGroup>
+        </div>
+        
       </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-2">
@@ -471,7 +498,7 @@ export function AgentForm({ onSubmit, onReturn, hasActionPermission }: AgentForm
               rows={4}
             />
           </div>
-      </div>
+        </div>
 
       <div className="flex items-center space-x-4 mt-6">
         <div className="w-24">

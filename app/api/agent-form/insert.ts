@@ -22,7 +22,7 @@ export async function insertAgentFormData(data: any[]) {
             observaciones, estado, cargaHoraria,
             lunes_in, lunes_out, martes_in, martes_out, miercoles_in, miercoles_out,
             jueves_in, jueves_out, viernes_in, viernes_out, sabado_in, sabado_out,
-            domingo_in, domingo_out, area
+            domingo_in, domingo_out, area, requiereEmailCorpo
           )
           VALUES
             ${data.map((_, index) =>
@@ -32,7 +32,7 @@ export async function insertAgentFormData(data: any[]) {
                 @lunes_in${index}, @lunes_out${index}, @martes_in${index}, @martes_out${index}, @miercoles_in${index}, @miercoles_out${index},
                 @jueves_in${index}, @jueves_out${index}, @viernes_in${index}, @viernes_out${index}, @sabado_in${index}, @sabado_out${index},
                 @domingo_in${index}, @domingo_out${index},
-                @area${index})`
+                @area${index}, @requiereEmailCorpo${index})`
             ).join(',')}
       `;
 
@@ -70,6 +70,7 @@ export async function insertAgentFormData(data: any[]) {
         { name: `domingo_in${index}`, parameterType: { type: 'STRING' }, parameterValue: { value: p.domingo_in } },
         { name: `domingo_out${index}`, parameterType: { type: 'STRING' }, parameterValue: { value: p.domingo_out } },
         { name: `area${index}`, parameterType: { type: 'STRING' }, parameterValue: { value: p.area } },
+        { name: `requiereEmailCorpo${index}`, parameterType: { type: 'STRING' }, parameterValue: { value: p.requiereEmailCorpo } },
       ]);
 
       const requestBody = {
