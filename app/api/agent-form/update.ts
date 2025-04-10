@@ -11,16 +11,19 @@ export async function updateAgentFormData(data: any) {
       SET 
         estado = "${estado}",
         area = "${area}",
+
         legajo = CASE
           WHEN "${legajo}" IS NOT NULL AND "${legajo}" != '' AND "${legajo}" != 'undefined' 
             THEN "${legajo}"
             ELSE legajo
         END,
+
         documento = CASE
           WHEN "${documento}" IS NOT NULL AND "${documento}" != '' AND "${documento}" != 'undefined' 
             THEN "${documento}"
             ELSE legajo
         END,
+
         observaciones = CASE
           WHEN "${observaciones}" IS NOT NULL AND "${observaciones}" != '' AND "${observaciones}" != 'undefined'
             THEN CASE 
@@ -31,30 +34,22 @@ export async function updateAgentFormData(data: any) {
           ELSE observaciones
         END,
 
-        --observaciones = CASE
-        --  WHEN observaciones IS NOT NULL AND observaciones != '' AND "${observaciones}" IS NOT NULL AND "${observaciones}" != '' AND "${observaciones}" != 'undefined' 
-        --    THEN CONCAT("${observaciones}", '; ', observaciones)
-        --  WHEN observaciones IS NULL OR observaciones = '' OR observaciones = 'undefined'
-        --    THEN "${observaciones}"
-        --  ELSE observaciones
-        -- END,
-
-        -- log_track = ${log_track ? `"${log_track}"` : null},
         log_track = CASE
-        WHEN ${log_track ? `"${log_track}"` : null} IS NOT NULL
-          THEN CASE
-                WHEN log_track IS NOT NULL AND log_track != '' AND ${append_log ? "TRUE" : "FALSE"}
-                  THEN CONCAT(log_track, ' | ', ${log_track ? `"${log_track}"` : null})
-                ELSE ${log_track ? `"${log_track}"` : null}
-              END
-          ELSE log_track
-        END,
+          WHEN ${log_track ? `"${log_track}"` : null} IS NOT NULL
+            THEN CASE
+                  WHEN log_track IS NOT NULL AND log_track != '' AND ${append_log ? "TRUE" : "FALSE"}
+                    THEN CONCAT(log_track, ' | ', ${log_track ? `"${log_track}"` : null})
+                  ELSE ${log_track ? `"${log_track}"` : null}
+                END
+            ELSE log_track
+          END,
 
         approvedFromIP=${approvedFromIP ? `"${approvedFromIP}"` : null}
+
       WHERE id_reg = "${id_reg}"
     `;
 
-    // console.log("Query:", query)
+    console.log("Query:", query)
 
 
     const url = `https://bigquery.googleapis.com/bigquery/v2/projects/${projectId}/queries`;

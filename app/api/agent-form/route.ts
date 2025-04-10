@@ -3,6 +3,7 @@ import { insertAgentFormData } from './insert';
 import { getAgentFormData } from './get';
 import { updateAgentFormData } from './update';
 import { deleteAgentFormData } from './delete';
+import { updateOperacionesData } from "./operaciones-update"
 
 export async function GET(request: NextRequest) {
   try {
@@ -45,10 +46,17 @@ export async function PUT(request: NextRequest) {
       approvedFromIP: realIP,
     }
 
-    // console.log('---------- Data Received:', body);
-    //GENERAMOS los resultados ya con el Body incluido
-    const result = await updateAgentFormData(dataWithIP)
-
+    console.log('---------- Data Received:', body);
+    // Determinar si es una actualización de operaciones basado en un flag
+    let result
+    if (dataWithIP.updateType === "operaciones") {
+      console.log("---------- Processing as Operaciones Update")
+      result = await updateOperacionesData(dataWithIP)
+    } else {
+      console.log("---------- Processing as Standard Update")
+      result = await updateAgentFormData(dataWithIP)
+    }
+    
     return NextResponse.json({
       ...result,
       data: {

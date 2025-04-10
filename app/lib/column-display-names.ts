@@ -1,6 +1,6 @@
 // src/constants/columnDisplayNames.ts
 export const columnDisplayNames: Record<string, string> = {
-    requisition_id: "Requisition ID",
+      requisition_id: "Requisition ID",
       created_by: "Creado por",
       area: "Área",
       fechaIngreso: "Fecha Ingreso",

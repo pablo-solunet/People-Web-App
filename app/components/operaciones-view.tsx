@@ -1,11 +1,21 @@
 "use client"
 
-import { DialogFooter } from "@/components/ui/dialog"
-
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { X, Search, RefreshCw, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Settings, Edit } from "lucide-react"
+import {
+  X,
+  Search,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+  Settings,
+  Edit,
+  AlertCircle,
+  CheckCircle2,
+} from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -23,72 +33,25 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
 import { columnDisplayNames } from "@/lib/column-display-names"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { gapFechaIngreso, gapOperacionesEdit, paises, canales, emailCorpoOption } from "@/lib/appConfig"
-import { TIME_SLOTS } from "@/lib/time-slots"
+import { gapFechaIngreso, paises, canales, emailCorpoOption } from "@/lib/appConfig"
+import { updateAgentForm, deleteAgentForm } from "@/api/agent-form/service"
+import { TimeSelector } from "@/components/operaciones/time-selector"
+import { DaySchedule } from "@/components/operaciones/day-schedule"
+import { useOperaciones, type OperacionesData } from "@/hooks/use-operaciones"
+import { canEditRecord, getMinimumDate, updateCargaHoraria, getStatusBadgeClass } from "@/lib/operaciones-utils"
 
-const puedeEditar = gapOperacionesEdit
 const dias_para_Editar = gapFechaIngreso
-
-interface OperacionesData {
-  id_reg: string
-  lote_id: string
-  requisition_id: string
-  created_by: string
-  created_at: string
-  updated_at: string
-  pais: string
-  fechaIngreso: string
-  cliente: string
-  atencion: string
-  canal: string
-  compania: string
-  cargaHoraria: string
-  horarioIn: string
-  horarioOut: string
-  job_title: string
-  jobDescription: string
-  puesto: string
-
-  lunes_in: string
-  lunes_out: string
-  martes_in: string
-  martes_out: string
-  miercoles_in: string
-  miercoles_out: string
-  jueves_in: string
-  jueves_out: string
-  viernes_in: string
-  viernes_out: string
-  sabado_in: string
-  sabado_out: string
-  domingo_in: string
-  domingo_out: string
-
-  estado: string
-  observaciones: string
-  area: string
-
-  requiereEmailCorpo: string
-
-  comentario: string
-
-  legajo: string
-  documento: string
-}
-
-interface OperacionesViewProps {
-  hasActionPermission: (action: string) => boolean
-  currentUser?: {
-    username: string
-    userId: string
-    permissions: string[]
-    actions: string[]
-  }
-}
 
 const allFields: (keyof OperacionesData)[] = [
   "requisition_id",
@@ -129,15 +92,68 @@ const allFields: (keyof OperacionesData)[] = [
   "requiereEmailCorpo",
 ]
 
-// export function OperacionesView({ hasActionPermission }: OperacionesViewProps) {
+// Definir los campos que pueden ser editados por Operaciones
+const editableFields: (keyof OperacionesData)[] = [
+  "pais",
+  "fechaIngreso",
+  "cliente",
+  "canal",
+  "observaciones",
+  "horarioIn",
+  "horarioOut",
+  "lunes_in",
+  "lunes_out",
+  "martes_in",
+  "martes_out",
+  "miercoles_in",
+  "miercoles_out",
+  "jueves_in",
+  "jueves_out",
+  "viernes_in",
+  "viernes_out",
+  "sabado_in",
+  "sabado_out",
+  "domingo_in",
+  "domingo_out",
+  "cargaHoraria",
+  "requiereEmailCorpo",
+]
+
+interface OperacionesViewProps {
+  hasActionPermission: (action: string) => boolean
+  currentUser?: {
+    username: string
+    userId: string
+    permissions: string[]
+    actions: string[]
+  }
+}
+
+// Tipo para los registros con cambios pendientes
+interface PendingChange {
+  id_reg: string
+  originalData: OperacionesData
+  pendingData: OperacionesData
+  timestamp: string
+}
+
 export function OperacionesView(props: OperacionesViewProps) {
   const { hasActionPermission, currentUser } = props
+  const {
+    operacionesData,
+    setOperacionesData,
+    filteredData,
+    isLoading,
+    searchTerm,
+    setSearchTerm,
+    filterField,
+    setFilterField,
+    filterValue,
+    setFilterValue,
+    fetchData: fetchOperacionesData,
+  } = useOperaciones()
+
   const [expandedLotes, setExpandedLotes] = useState<string[]>([])
-  const [operacionesData, setOperacionesData] = useState<OperacionesData[]>([])
-  const [filteredData, setFilteredData] = useState<OperacionesData[]>([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [filterField, setFilterField] = useState("")
-  const [filterValue, setFilterValue] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
   const [visibleFields, setVisibleFields] = useState<(keyof OperacionesData)[]>([
@@ -152,7 +168,6 @@ export function OperacionesView(props: OperacionesViewProps) {
     "observaciones",
     "requiereEmailCorpo",
   ])
-  const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
 
   const [editingRecord, setEditingRecord] = useState<OperacionesData | null>(null)
@@ -164,126 +179,11 @@ export function OperacionesView(props: OperacionesViewProps) {
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  useEffect(() => {
-    fetchOperacionesData()
-  }, [])
-
-  useEffect(() => {
-    filterAndSearchData()
-  }, [operacionesData, searchTerm, filterField, filterValue])
-
-  const fetchOperacionesData = async () => {
-    setIsLoading(true)
-    try {
-      const response = await fetch("/api/agent-form")
-      const data = await response.json()
-
-      if (data.success && Array.isArray(data.data)) {
-        const formattedData = data.data.map((item: any) => {
-          const record: any = {}
-          item.f.forEach((field: any, index: number) => {
-            const fieldNames = [
-              "id_reg",
-              "lote_id",
-              "requisition_id",
-              "created_by",
-              "created_at",
-              "updated_at",
-              "pais",
-              "pais_contrato",
-              "fechaIngreso",
-              "cliente",
-              "atencion",
-              "canal",
-              "compania",
-              "horarioIn",
-              "horarioOut",
-              "job_title",
-              "jobDescription",
-              "puesto",
-              "observaciones",
-              "estado",
-              "cargaHoraria",
-              "lunes_in",
-              "lunes_out",
-              "martes_in",
-              "martes_out",
-              "miercoles_in",
-              "miercoles_out",
-              "jueves_in",
-              "jueves_out",
-              "viernes_in",
-              "viernes_out",
-              "sabado_in",
-              "sabado_out",
-              "domingo_in",
-              "domingo_out",
-              "area",
-              "legajo",
-              "documento",
-              "approvedFromIP",
-              "log_track",
-              "requiereEmailCorpo",
-            ]
-            record[fieldNames[index]] = field.v
-          })
-          return record as OperacionesData
-        })
-
-        // Agregar este log para verificar si el campo está presente en los datos
-        // console.log(
-        //   "Datos formateados:",
-        //   formattedData.map((item) => ({
-        //     id: item.id_reg,
-        //     requiereEmailCorpo: item.requiereEmailCorpo,
-        //   })),
-        // )
-
-        setOperacionesData(formattedData)
-      } else {
-        console.error("Unexpected data structure:", data)
-        setOperacionesData([])
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los datos de operaciones.",
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
-      console.error("Error fetching operaciones data:", error)
-      setOperacionesData([])
-      toast({
-        title: "Error",
-        description: "Ocurrió un error al cargar los datos de operaciones.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const filterAndSearchData = () => {
-    // let result = operacionesData.filter((record) => record.area == "Operaciones" && record.estado !== "")
-    let result = operacionesData.filter((record) => record.estado !== "")
-
-    if (searchTerm) {
-      result = result.filter((record) =>
-        Object.values(record).some(
-          (value) =>
-            value !== null && value !== undefined && value.toString().toLowerCase().includes(searchTerm.toLowerCase()),
-        ),
-      )
-    }
-
-    if (filterField && filterValue) {
-      result = result.filter(
-        (record) =>
-          record[filterField as keyof OperacionesData]?.toString().toLowerCase() === filterValue.toLowerCase(),
-      )
-    }
-
-    setFilteredData(result)
-  }
+  // Estado para los cambios pendientes
+  const [pendingChanges, setPendingChanges] = useState<PendingChange[]>([])
+  const [isConfirmChangesOpen, setIsConfirmChangesOpen] = useState(false)
+  const [selectedPendingChange, setSelectedPendingChange] = useState<PendingChange | null>(null)
+  const [isApplyingChanges, setIsApplyingChanges] = useState(false)
 
   const groupedRecords = filteredData.reduce(
     (acc, record) => {
@@ -304,108 +204,23 @@ export function OperacionesView(props: OperacionesViewProps) {
     setVisibleFields((prev) => (prev.includes(field) ? prev.filter((f) => f !== field) : [...prev, field]))
   }
 
-  const updateRecordState = async (id_reg: string, newState: string, isLote: boolean, lote_id?: string) => {
-    try {
-      let newestado = "null"
-      let newarea = "null"
-
-      if (newState == "Aprobado") {
-        newestado = "Pendiente"
-        newarea = "Manager"
-      } else {
-        newestado = "Rechazado"
-        newarea = "Operaciones"
-      }
-
-      const currentTimestamp = new Date().toLocaleString()
-      const userDisplayName = currentUser?.username || "Operaciones"
-
-      const response = await fetch("/api/agent-form", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          isLote: isLote,
-          lote_id: lote_id,
-          id_reg: id_reg,
-          estado: newestado,
-          area: newarea,
-          observaciones: newState === "Rechazado" ? "rejectComment" : "",
-          log_track: `${newState} From ${userDisplayName} at ${currentTimestamp}`,
-          append_log: true, // Indicador para el backend de que debe añadir al log existente
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to update record")
-      }
-
-      const result = await response.json()
-      if (result.success) {
-        setOperacionesData((prevData) =>
-          prevData.map((record) =>
-            record.id_reg === id_reg ? { ...record, estado: newState, comentario: "rejectComment" } : record,
-          ),
-        )
-        toast({
-          title: "Éxito",
-          description: `Registro ${id_reg} actualizado a estado: ${newState}`,
-        })
-      } else {
-        throw new Error(result.message || "Failed to update record")
-      }
-    } catch (error) {
-      console.error("Error updating record:", error)
-      toast({
-        title: "Error",
-        description: `No se pudo actualizar el registro: ${error}`,
-        variant: "destructive",
-      })
-    }
-  }
-
-  // Modificar la función handleEditSubmit para incluir solo los campos permitidos
   const handleEdit = (record: OperacionesData) => {
     console.log("Registro a editar:", record)
     console.log("Campo requiereEmailCorpo:", record.requiereEmailCorpo)
-    setEditingRecord(record)
+    setEditingRecord({ ...record })
     setIsEditDialogOpen(true)
   }
 
-  // Definir los campos que pueden ser editados por Operaciones
-  const editableFields: (keyof OperacionesData)[] = [
-    "pais",
-    "fechaIngreso",
-    "cliente",
-    "canal",
-    "observaciones",
-    "horarioIn",
-    "horarioOut",
-    "lunes_in",
-    "lunes_out",
-    "martes_in",
-    "martes_out",
-    "miercoles_in",
-    "miercoles_out",
-    "jueves_in",
-    "jueves_out",
-    "viernes_in",
-    "viernes_out",
-    "sabado_in",
-    "sabado_out",
-    "domingo_in",
-    "domingo_out",
-    "cargaHoraria",
-    "requiereEmailCorpo",
-  ]
-
-  const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  // Función para guardar cambios como pendientes
+  const handleSaveAsPending = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!editingRecord) return
 
     // Validar fecha mínima antes de enviar
-    if (editingRecord.fechaIngreso && new Date(editingRecord.fechaIngreso) < new Date(getMinimumDate())) {
+    if (
+      editingRecord.fechaIngreso &&
+      new Date(editingRecord.fechaIngreso) < new Date(getMinimumDate(Number(dias_para_Editar)))
+    ) {
       toast({
         title: "Error",
         description: `La fecha debe ser al menos ${dias_para_Editar} días después de hoy`,
@@ -416,44 +231,59 @@ export function OperacionesView(props: OperacionesViewProps) {
 
     setIsSaving(true)
 
-    // Crear un objeto con solo los campos editables
-    const updatedFields: Partial<OperacionesData> = {}
-    editableFields.forEach((field) => {
-      updatedFields[field] = editingRecord[field]
-    })
-
     try {
-      const response = await fetch("/api/agent-form", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id_reg: editingRecord.id_reg, ...updatedFields }), // Enviar solo los campos actualizados
+      // Buscar el registro original en operacionesData
+      const originalRecord = operacionesData.find((record) => record.id_reg === editingRecord.id_reg)
+
+      if (!originalRecord) {
+        throw new Error("No se encontró el registro original")
+      }
+
+      // Crear un nuevo cambio pendiente
+      const newPendingChange: PendingChange = {
+        id_reg: editingRecord.id_reg,
+        originalData: { ...originalRecord },
+        pendingData: { ...editingRecord },
+        timestamp: new Date().toISOString(),
+      }
+
+      // Actualizar el estado de cambios pendientes
+      setPendingChanges((prev) => {
+        // Si ya existe un cambio pendiente para este registro, reemplazarlo
+        const existingIndex = prev.findIndex((change) => change.id_reg === editingRecord.id_reg)
+        if (existingIndex >= 0) {
+          const newChanges = [...prev]
+          newChanges[existingIndex] = newPendingChange
+          return newChanges
+        }
+        // Si no existe, añadir uno nuevo
+        return [...prev, newPendingChange]
       })
 
-      if (!response.ok) {
-        throw new Error("Failed to update record")
-      }
+      // Actualizar la UI para mostrar que hay cambios pendientes
+      setOperacionesData((prevData) =>
+        prevData.map((record) => {
+          if (record.id_reg === editingRecord.id_reg) {
+            return {
+              ...record,
+              ...editingRecord,
+              estado: "Pendiente de confirmación", // Estado visual para indicar cambios pendientes
+            }
+          }
+          return record
+        }),
+      )
 
-      const result = await response.json()
-
-      if (result.success) {
-        setOperacionesData((prevData) =>
-          prevData.map((record) => (record.id_reg === editingRecord.id_reg ? { ...record, ...updatedFields } : record)),
-        )
-        toast({
-          title: "Éxito",
-          description: `Registro ${editingRecord.id_reg} actualizado correctamente`,
-        })
-        setIsEditDialogOpen(false)
-      } else {
-        throw new Error(result.message || "Failed to update record")
-      }
+      toast({
+        title: "Cambios guardados como pendientes",
+        description: "Los cambios han sido guardados y están pendientes de confirmación.",
+      })
+      setIsEditDialogOpen(false)
     } catch (error) {
-      console.error("Error updating record:", error)
+      console.error("Error saving pending changes:", error)
       toast({
         title: "Error",
-        description: `No se pudo actualizar el registro: ${error}`,
+        description: `No se pudieron guardar los cambios pendientes: ${error}`,
         variant: "destructive",
       })
     } finally {
@@ -461,26 +291,102 @@ export function OperacionesView(props: OperacionesViewProps) {
     }
   }
 
+  // Función para confirmar y aplicar cambios pendientes
+  const handleConfirmChanges = async (pendingChange: PendingChange) => {
+    setIsApplyingChanges(true)
+    try {
+      // Crear un objeto con solo los campos editables
+      const updatedFields: Partial<OperacionesData> = {}
+      editableFields.forEach((field) => {
+        updatedFields[field] = pendingChange.pendingData[field]
+      })
+
+      // Siempre establecer estado como "Pendiente" y área como "Training"
+      updatedFields.estado = "Pendiente"
+      updatedFields.area = "Training"
+
+      // Añadir información al log_track
+      const username = currentUser?.username || "Operaciones"
+      const currentTimestamp = new Date().toLocaleString()
+      updatedFields.log_track = `Cambios confirmados por ${username} at ${currentTimestamp}`
+      updatedFields.append_log = true
+
+      const result = await updateAgentForm(pendingChange.id_reg, updatedFields)
+
+      if (result.success) {
+        // Actualizar el estado local
+        setOperacionesData((prevData) =>
+          prevData.map((record) => {
+            if (record.id_reg === pendingChange.id_reg) {
+              return {
+                ...record,
+                ...updatedFields,
+                estado: "Pendiente", // Establecer el estado como Pendiente
+                area: "Training", // Establecer el área como Training
+              }
+            }
+            return record
+          }),
+        )
+
+        // Eliminar de los cambios pendientes
+        setPendingChanges((prev) => prev.filter((change) => change.id_reg !== pendingChange.id_reg))
+
+        toast({
+          title: "Cambios aplicados",
+          description: `Los cambios han sido aplicados y el registro ha sido enviado a Training.`,
+        })
+        setIsConfirmChangesOpen(false)
+        setSelectedPendingChange(null)
+      } else {
+        throw new Error(result.message || "Failed to apply changes")
+      }
+    } catch (error) {
+      console.error("Error applying changes:", error)
+      toast({
+        title: "Error",
+        description: `No se pudieron aplicar los cambios: ${error}`,
+        variant: "destructive",
+      })
+    } finally {
+      setIsApplyingChanges(false)
+    }
+  }
+
+  // Función para descartar cambios pendientes
+  const handleDiscardChanges = (pendingChange: PendingChange) => {
+    // Restaurar el registro a su estado original en la UI
+    setOperacionesData((prevData) =>
+      prevData.map((record) => {
+        if (record.id_reg === pendingChange.id_reg) {
+          return { ...pendingChange.originalData }
+        }
+        return record
+      }),
+    )
+
+    // Eliminar de los cambios pendientes
+    setPendingChanges((prev) => prev.filter((change) => change.id_reg !== pendingChange.id_reg))
+
+    toast({
+      title: "Cambios descartados",
+      description: `Los cambios pendientes al registro ${pendingChange.id_reg} han sido descartados.`,
+    })
+    setIsConfirmChangesOpen(false)
+    setSelectedPendingChange(null)
+  }
+
   const handleDelete = async (id_reg: string) => {
     setIsDeleting(true)
     try {
-      const response = await fetch(`/api/agent-form?id=${id_reg}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to delete record")
-      }
-
-      const result = await response.json()
+      const result = await deleteAgentForm(id_reg)
 
       if (result.success) {
         // Actualizar el estado local eliminando el registro
         setOperacionesData((prevData) => prevData.filter((record) => record.id_reg !== id_reg))
 
-        // Update the main data state
-        setOperacionesData((prevData) => prevData.filter((record) => record.id_reg !== id_reg))
+        // Eliminar cualquier cambio pendiente para este registro
+        setPendingChanges((prev) => prev.filter((change) => change.id_reg !== id_reg))
 
         toast({
           title: "Éxito",
@@ -506,91 +412,6 @@ export function OperacionesView(props: OperacionesViewProps) {
     }
   }
 
-  const totalPages = Math.ceil(Object.keys(groupedRecords).length / itemsPerPage)
-  const paginatedLotes = Object.entries(groupedRecords).slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
-  )
-
-  // Funcion para Calcular dias antes del Ingreso
-  const canEditRecord = (fechaIngreso: string): boolean => {
-    const today = new Date()
-    const fecha = new Date(fechaIngreso)
-    const diffDays = (fecha.getTime() - today.getTime()) / (1000 * 3600 * 24)
-    return diffDays >= Number(puedeEditar)
-  }
-
-  // Funcion para obtener la fecha mínima permitida (similar a form-agent.tsx)
-  const getMinimumDate = () => {
-    const today = new Date()
-    const minDate = new Date(today)
-    minDate.setDate(today.getDate() + Number(dias_para_Editar))
-    return minDate.toISOString().split("T")[0]
-  }
-
-  // Dentro del componente, antes del return:
-  const distinctFilterValues = React.useMemo(() => {
-    if (!filterField) return []
-    // Extrae los valores del campo seleccionado y filtra los nulos o vacíos.
-    const values = operacionesData
-      .map((record) => record[filterField as keyof OperacionesData])
-      .filter((value) => value !== null && value !== undefined && value !== "")
-    return Array.from(new Set(values))
-  }, [operacionesData, filterField])
-
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case "Pendiente":
-        return "bg-status-pendiente dark:bg-status-pendienteDark text-gray-800 dark:text-gray-100"
-      case "EnBusqueda":
-        return "bg-status-enBusqueda dark:bg-status-enBusquedaDark text-gray-800 dark:text-gray-100"
-      case "Finalizado":
-        return "bg-status-finalizado dark:bg-status-finalizadoDark text-gray-800 dark:text-gray-100"
-      case "Rechazado":
-        return "bg-status-rechazado dark:bg-status-rechazadoDark text-gray-800 dark:text-gray-100"
-      default:
-        return "bg-gray-200 dark:bg-gray-700"
-    }
-  }
-
-  const calculateWorkHours = (startTime: string, endTime: string): number => {
-    if (startTime === "Franco" || endTime === "Franco") return 0
-
-    // Convertir los horarios a minutos para facilitar el cálculo
-    const getMinutes = (time: string): number => {
-      const [hours, minutes] = time.split(":").map(Number)
-      return hours * 60 + minutes
-    }
-
-    const startMinutes = getMinutes(startTime)
-    const endMinutes = getMinutes(endTime)
-
-    // Si la hora de fin es menor que la de inicio, asumimos que cruza la medianoche
-    let diffMinutes = endMinutes - startMinutes
-    if (diffMinutes < 0) {
-      diffMinutes += 24 * 60 // Añadir un día completo en minutos
-    }
-
-    // Convertir minutos a horas con un decimal
-    return Math.round(diffMinutes / 6) / 10 // Redondear a 1 decimal
-  }
-
-  const updateCargaHoraria = (record: OperacionesData): string => {
-    const days = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]
-    let totalHours = 0
-
-    days.forEach((day) => {
-      const startTime = record[`${day}_in` as keyof OperacionesData] as string
-      const endTime = record[`${day}_out` as keyof OperacionesData] as string
-
-      if (startTime && endTime && startTime !== "Franco") {
-        totalHours += calculateWorkHours(startTime, endTime)
-      }
-    })
-
-    return totalHours.toFixed(1)
-  }
-
   const handleHorarioDiaChange = (dia: string, type: "in" | "out", value: string) => {
     if (editingRecord) {
       const newRecord = { ...editingRecord }
@@ -610,50 +431,50 @@ export function OperacionesView(props: OperacionesViewProps) {
     }
   }
 
-  // Componente personalizado para el selector de horarios
-  const TimeSelector = ({
-    value,
-    onChange,
-    id,
-    disabled = false,
-    includesFranco = false,
-  }: {
-    value: string
-    onChange: (value: string) => void
-    id: string
-    disabled?: boolean
-    includesFranco?: boolean
-  }) => {
-    return (
-      <div className="relative">
-        <select
-          id={id}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          disabled={disabled}
-          className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 border-blue-200 dark:border-blue-800"
-        >
-          {includesFranco && <option value="Franco">Franco</option>}
-          {TIME_SLOTS.map((slot) => (
-            <option key={slot} value={slot}>
-              {slot}
-            </option>
-          ))}
-        </select>
-      </div>
-    )
+  const totalPages = Math.ceil(Object.keys(groupedRecords).length / itemsPerPage)
+  const paginatedLotes = Object.entries(groupedRecords).slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  )
+
+  // Dentro del componente, antes del return:
+  const distinctFilterValues = React.useMemo(() => {
+    if (!filterField) return []
+    // Extrae los valores del campo seleccionado y filtra los nulos o vacíos.
+    const values = operacionesData
+      .map((record) => record[filterField as keyof OperacionesData])
+      .filter((value) => value !== null && value !== undefined && value !== "")
+    return Array.from(new Set(values))
+  }, [operacionesData, filterField])
+
+  // Verificar si un registro tiene cambios pendientes
+  const hasPendingChanges = (id_reg: string) => {
+    return pendingChanges.some((change) => change.id_reg === id_reg)
   }
 
-return (
+  return (
     <div className="space-y-4">
       <Card className="border-blue-100 dark:border-blue-800 shadow-blue-sm dark:shadow-none">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-medium flex items-center justify-between">
             <span>Filtros y Búsqueda</span>
-            <Button onClick={fetchOperacionesData} disabled={isLoading} variant="outline" size="sm" className="ml-auto">
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
-              Recargar
-            </Button>
+            <div className="flex items-center gap-2">
+              {pendingChanges.length > 0 && (
+                <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                  {pendingChanges.length} cambio(s) pendiente(s)
+                </Badge>
+              )}
+              <Button
+                onClick={fetchOperacionesData}
+                disabled={isLoading}
+                variant="outline"
+                size="sm"
+                className="ml-auto"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
+                Recargar
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -766,6 +587,66 @@ return (
         </CardContent>
       </Card>
 
+      {pendingChanges.length > 0 && (
+        <Card className="border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-medium text-yellow-800 dark:text-yellow-300">
+              Cambios Pendientes de Confirmación
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                Tienes {pendingChanges.length} cambio(s) pendiente(s) de confirmación. Revisa y confirma los cambios
+                antes de enviarlos.
+              </p>
+              <p className="text-xs text-yellow-600 dark:text-yellow-500 italic">
+                Nota: Los cambios pendientes se perderán si recargas la página o cierras el navegador. Confirma o
+                descarta los cambios antes de salir.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mt-2">
+                {pendingChanges.map((change) => (
+                  <Card key={change.id_reg} className="border-yellow-300 dark:border-yellow-700">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h4 className="font-medium">ReqId : {change.pendingData.requisition_id}</h4>
+                          <p className="text-xs text-muted-foreground">{new Date(change.timestamp).toLocaleString()}</p>
+                        </div>
+                        <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                          Pendiente
+                        </Badge>
+                      </div>
+                      <div className="mt-2 space-y-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-300"
+                          onClick={() => {
+                            setSelectedPendingChange(change)
+                            setIsConfirmChangesOpen(true)
+                          }}
+                        >
+                          Ver y confirmar cambios
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full border-red-300 dark:border-red-700 text-red-800 dark:text-red-300 mt-1"
+                          onClick={() => handleDiscardChanges(change)}
+                        >
+                          Descartar cambios
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {isLoading ? (
         <div className="flex justify-center items-center py-12">
           <RefreshCw className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400" />
@@ -849,13 +730,23 @@ return (
                                 {loteRecords.map((record) => (
                                   <TableRow
                                     key={record.id_reg}
-                                    className="hover:bg-blue-50/50 dark:hover:bg-blue-900/20 transition-colors"
+                                    className={`hover:bg-blue-50/50 dark:hover:bg-blue-900/20 transition-colors ${
+                                      hasPendingChanges(record.id_reg) ? "bg-yellow-50/50 dark:bg-yellow-900/10" : ""
+                                    }`}
                                   >
                                     {visibleFields.map((field) => (
                                       <TableCell key={`${record.id_reg}-${field}`} className="py-2">
                                         {field === "estado" ? (
-                                          <Badge className={`${getStatusBadgeClass(record.estado)}`}>
-                                            {record.estado}
+                                          <Badge
+                                            className={`${
+                                              hasPendingChanges(record.id_reg)
+                                                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300"
+                                                : getStatusBadgeClass(record.estado)
+                                            }`}
+                                          >
+                                            {hasPendingChanges(record.id_reg)
+                                              ? "Pendiente de confirmación"
+                                              : record.estado}
                                           </Badge>
                                         ) : field === "created_at" || field === "updated_at" ? (
                                           formatDateTime(record[field])
@@ -872,12 +763,31 @@ return (
                                           onClick={() => handleEdit(record)}
                                           disabled={
                                             !hasActionPermission("operaciones-edit") ||
-                                            !canEditRecord(record.fechaIngreso)
+                                            !canEditRecord(record.fechaIngreso) ||
+                                            hasPendingChanges(record.id_reg)
                                           }
                                           className="border-blue-200 dark:border-blue-800"
                                         >
                                           <Edit className="h-4 w-4" />
                                         </Button>
+                                        {hasPendingChanges(record.id_reg) && (
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => {
+                                              const pendingChange = pendingChanges.find(
+                                                (change) => change.id_reg === record.id_reg,
+                                              )
+                                              if (pendingChange) {
+                                                setSelectedPendingChange(pendingChange)
+                                                setIsConfirmChangesOpen(true)
+                                              }
+                                            }}
+                                            className="border-yellow-200 dark:border-yellow-800 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
+                                          >
+                                            Confirmar
+                                          </Button>
+                                        )}
                                       </div>
                                     </TableCell>
                                   </TableRow>
@@ -964,10 +874,12 @@ return (
         <DialogContent className="border-blue-200 dark:border-blue-800 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Registro</DialogTitle>
-            <DialogDescription>Modifique los campos necesarios y guarde los cambios.</DialogDescription>
+            <DialogDescription>
+              Modifique los campos necesarios y guarde los cambios para revisión posterior.
+            </DialogDescription>
           </DialogHeader>
           {editingRecord && (
-            <form onSubmit={handleEditSubmit} className="space-y-6">
+            <form onSubmit={handleSaveAsPending} className="space-y-6">
               {/* Datos Generales */}
               <div className="space-y-4">
                 <h3 className="font-medium text-sm">Datos Generales</h3>
@@ -997,15 +909,16 @@ return (
                       type="date"
                       value={editingRecord.fechaIngreso}
                       onChange={(e) => setEditingRecord({ ...editingRecord, fechaIngreso: e.target.value })}
-                      min={getMinimumDate()}
+                      min={getMinimumDate(Number(dias_para_Editar))}
                       className={`border-blue-200 dark:border-blue-800 ${
-                        editingRecord.fechaIngreso && new Date(editingRecord.fechaIngreso) < new Date(getMinimumDate())
+                        editingRecord.fechaIngreso &&
+                        new Date(editingRecord.fechaIngreso) < new Date(getMinimumDate(Number(dias_para_Editar)))
                           ? "border-red-300"
                           : ""
                       }`}
                     />
                     {editingRecord.fechaIngreso &&
-                      new Date(editingRecord.fechaIngreso) < new Date(getMinimumDate()) && (
+                      new Date(editingRecord.fechaIngreso) < new Date(getMinimumDate(Number(dias_para_Editar))) && (
                         <p className="text-sm text-red-500">
                           La fecha debe ser al menos {dias_para_Editar} días después de hoy
                         </p>
@@ -1077,215 +990,75 @@ return (
               <div className="space-y-4">
                 <h3 className="font-medium text-sm">Horarios por Día</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Lunes */}
-                  <div className="space-y-2">
-                    <Label>Lunes</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <Label htmlFor="lunes_in" className="text-xs">
-                          Entrada
-                        </Label>
-                        <TimeSelector
-                          id="lunes_in"
-                          value={editingRecord.lunes_in}
-                          onChange={(value) => handleHorarioDiaChange("lunes", "in", value)}
-                          includesFranco={true}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="lunes_out" className="text-xs">
-                          Salida
-                        </Label>
-                        <TimeSelector
-                          id="lunes_out"
-                          value={editingRecord.lunes_out}
-                          onChange={(value) => handleHorarioDiaChange("lunes", "out", value)}
-                          disabled={editingRecord.lunes_in === "Franco"}
-                          includesFranco={true}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  <DaySchedule
+                    day="lunes"
+                    dayLabel="Lunes"
+                    inValue={editingRecord.lunes_in}
+                    outValue={editingRecord.lunes_out}
+                    onInChange={(value) => handleHorarioDiaChange("lunes", "in", value)}
+                    onOutChange={(value) => handleHorarioDiaChange("lunes", "out", value)}
+                    disabled={editingRecord.lunes_in === "Franco"}
+                  />
 
-                  {/* Martes */}
-                  <div className="space-y-2">
-                    <Label>Martes</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <Label htmlFor="martes_in" className="text-xs">
-                          Entrada
-                        </Label>
-                        <TimeSelector
-                          id="martes_in"
-                          value={editingRecord.martes_in}
-                          onChange={(value) => handleHorarioDiaChange("martes", "in", value)}
-                          includesFranco={true}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="martes_out" className="text-xs">
-                          Salida
-                        </Label>
-                        <TimeSelector
-                          id="martes_out"
-                          value={editingRecord.martes_out}
-                          onChange={(value) => handleHorarioDiaChange("martes", "out", value)}
-                          disabled={editingRecord.martes_in === "Franco"}
-                          includesFranco={true}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  <DaySchedule
+                    day="martes"
+                    dayLabel="Martes"
+                    inValue={editingRecord.martes_in}
+                    outValue={editingRecord.martes_out}
+                    onInChange={(value) => handleHorarioDiaChange("martes", "in", value)}
+                    onOutChange={(value) => handleHorarioDiaChange("martes", "out", value)}
+                    disabled={editingRecord.martes_in === "Franco"}
+                  />
 
-                  {/* Miércoles */}
-                  <div className="space-y-2">
-                    <Label>Miércoles</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <Label htmlFor="miercoles_in" className="text-xs">
-                          Entrada
-                        </Label>
-                        <TimeSelector
-                          id="miercoles_in"
-                          value={editingRecord.miercoles_in}
-                          onChange={(value) => handleHorarioDiaChange("miercoles", "in", value)}
-                          includesFranco={true}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="miercoles_out" className="text-xs">
-                          Salida
-                        </Label>
-                        <TimeSelector
-                          id="miercoles_out"
-                          value={editingRecord.miercoles_out}
-                          onChange={(value) => handleHorarioDiaChange("miercoles", "out", value)}
-                          disabled={editingRecord.miercoles_in === "Franco"}
-                          includesFranco={true}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  <DaySchedule
+                    day="miercoles"
+                    dayLabel="Miércoles"
+                    inValue={editingRecord.miercoles_in}
+                    outValue={editingRecord.miercoles_out}
+                    onInChange={(value) => handleHorarioDiaChange("miercoles", "in", value)}
+                    onOutChange={(value) => handleHorarioDiaChange("miercoles", "out", value)}
+                    disabled={editingRecord.miercoles_in === "Franco"}
+                  />
 
-                  {/* Jueves */}
-                  <div className="space-y-2">
-                    <Label>Jueves</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <Label htmlFor="jueves_in" className="text-xs">
-                          Entrada
-                        </Label>
-                        <TimeSelector
-                          id="jueves_in"
-                          value={editingRecord.jueves_in}
-                          onChange={(value) => handleHorarioDiaChange("jueves", "in", value)}
-                          includesFranco={true}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="jueves_out" className="text-xs">
-                          Salida
-                        </Label>
-                        <TimeSelector
-                          id="jueves_out"
-                          value={editingRecord.jueves_out}
-                          onChange={(value) => handleHorarioDiaChange("jueves", "out", value)}
-                          disabled={editingRecord.jueves_in === "Franco"}
-                          includesFranco={true}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  <DaySchedule
+                    day="jueves"
+                    dayLabel="Jueves"
+                    inValue={editingRecord.jueves_in}
+                    outValue={editingRecord.jueves_out}
+                    onInChange={(value) => handleHorarioDiaChange("jueves", "in", value)}
+                    onOutChange={(value) => handleHorarioDiaChange("jueves", "out", value)}
+                    disabled={editingRecord.jueves_in === "Franco"}
+                  />
 
-                  {/* Viernes */}
-                  <div className="space-y-2">
-                    <Label>Viernes</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <Label htmlFor="viernes_in" className="text-xs">
-                          Entrada
-                        </Label>
-                        <TimeSelector
-                          id="viernes_in"
-                          value={editingRecord.viernes_in}
-                          onChange={(value) => handleHorarioDiaChange("viernes", "in", value)}
-                          includesFranco={true}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="viernes_out" className="text-xs">
-                          Salida
-                        </Label>
-                        <TimeSelector
-                          id="viernes_out"
-                          value={editingRecord.viernes_out}
-                          onChange={(value) => handleHorarioDiaChange("viernes", "out", value)}
-                          disabled={editingRecord.viernes_in === "Franco"}
-                          includesFranco={true}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  <DaySchedule
+                    day="viernes"
+                    dayLabel="Viernes"
+                    inValue={editingRecord.viernes_in}
+                    outValue={editingRecord.viernes_out}
+                    onInChange={(value) => handleHorarioDiaChange("viernes", "in", value)}
+                    onOutChange={(value) => handleHorarioDiaChange("viernes", "out", value)}
+                    disabled={editingRecord.viernes_in === "Franco"}
+                  />
 
-                  {/* Sábado */}
-                  <div className="space-y-2">
-                    <Label>Sábado</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <Label htmlFor="sabado_in" className="text-xs">
-                          Entrada
-                        </Label>
-                        <TimeSelector
-                          id="sabado_in"
-                          value={editingRecord.sabado_in}
-                          onChange={(value) => handleHorarioDiaChange("sabado", "in", value)}
-                          includesFranco={true}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="sabado_out" className="text-xs">
-                          Salida
-                        </Label>
-                        <TimeSelector
-                          id="sabado_out"
-                          value={editingRecord.sabado_out}
-                          onChange={(value) => handleHorarioDiaChange("sabado", "out", value)}
-                          disabled={editingRecord.sabado_in === "Franco"}
-                          includesFranco={true}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  <DaySchedule
+                    day="sabado"
+                    dayLabel="Sábado"
+                    inValue={editingRecord.sabado_in}
+                    outValue={editingRecord.sabado_out}
+                    onInChange={(value) => handleHorarioDiaChange("sabado", "in", value)}
+                    onOutChange={(value) => handleHorarioDiaChange("sabado", "out", value)}
+                    disabled={editingRecord.sabado_in === "Franco"}
+                  />
 
-                  {/* Domingo */}
-                  <div className="space-y-2">
-                    <Label>Domingo</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <Label htmlFor="domingo_in" className="text-xs">
-                          Entrada
-                        </Label>
-                        <TimeSelector
-                          id="domingo_in"
-                          value={editingRecord.domingo_in}
-                          onChange={(value) => handleHorarioDiaChange("domingo", "in", value)}
-                          includesFranco={true}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="domingo_out" className="text-xs">
-                          Salida
-                        </Label>
-                        <TimeSelector
-                          id="domingo_out"
-                          value={editingRecord.domingo_out}
-                          onChange={(value) => handleHorarioDiaChange("domingo", "out", value)}
-                          disabled={editingRecord.domingo_in === "Franco"}
-                          includesFranco={true}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  <DaySchedule
+                    day="domingo"
+                    dayLabel="Domingo"
+                    inValue={editingRecord.domingo_in}
+                    outValue={editingRecord.domingo_out}
+                    onInChange={(value) => handleHorarioDiaChange("domingo", "in", value)}
+                    onOutChange={(value) => handleHorarioDiaChange("domingo", "out", value)}
+                    disabled={editingRecord.domingo_in === "Franco"}
+                  />
                 </div>
               </div>
 
@@ -1319,25 +1092,28 @@ return (
                       ))}
                     </SelectContent>
                   </Select>
-                </div>                
+                </div>
               </div>
 
-              <DialogFooter className="flex justify-between">
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={() => {
-                    if (editingRecord) {
-                      setRecordToDelete(editingRecord.id_reg)
-                      setIsDeleteAlertOpen(true)
-                    }
-                  }}
-                  disabled={isDeleting}
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                >
-                  {isDeleting ? <RefreshCw className="animate-spin h-4 w-4" /> : "Eliminar Registro"}
-                </Button>
-                <div className="space-x-2">
+              <DialogFooter className="flex flex-col sm:flex-row justify-between gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => {
+                      if (editingRecord) {
+                        setRecordToDelete(editingRecord.id_reg)
+                        setIsDeleteAlertOpen(true)
+                      }
+                    }}
+                    disabled={isDeleting}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    {isDeleting ? <RefreshCw className="animate-spin h-4 w-4" /> : "Eliminar Registro"}
+                  </Button>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Button
                     type="button"
                     variant="outline"
@@ -1347,12 +1123,119 @@ return (
                   >
                     Cancelar
                   </Button>
-                  <Button type="submit" disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 text-white">
-                    {isSaving ? <RefreshCw className="animate-spin h-4 w-4" /> : "Guardar cambios"}
+                  <Button type="submit" disabled={isSaving} className="bg-yellow-600 hover:bg-yellow-700 text-white">
+                    {isSaving ? <RefreshCw className="animate-spin h-4 w-4" /> : "Guardar para revisión"}
                   </Button>
                 </div>
               </DialogFooter>
             </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isConfirmChangesOpen} onOpenChange={setIsConfirmChangesOpen}>
+        <DialogContent className="border-yellow-200 dark:border-yellow-800 max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-yellow-800 dark:text-yellow-300 flex items-center">
+              <AlertCircle className="h-5 w-5 mr-2 text-yellow-600 dark:text-yellow-400" />
+              Confirmar Cambios Pendientes
+            </DialogTitle>
+            <DialogDescription>
+              Revisa los cambios realizados antes de confirmarlos. Una vez confirmados, los cambios serán aplicados.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedPendingChange && (
+            <div className="space-y-6">
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-md">
+                <h3 className="font-medium text-yellow-800 dark:text-yellow-300 mb-2">Detalles del Registro</h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="font-medium">ReqId :</span> {selectedPendingChange.pendingData.requisition_id}
+                  </div>
+                  <div>
+                    <span className="font-medium">Fecha de cambio:</span>{" "}
+                    {new Date(selectedPendingChange.timestamp).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-medium text-sm">Cambios Realizados</h3>
+                <div className="border border-yellow-200 dark:border-yellow-800 rounded-md overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-yellow-50 dark:bg-yellow-900/30">
+                        <TableHead className="font-medium">Campo</TableHead>
+                        <TableHead className="font-medium">Valor Original</TableHead>
+                        <TableHead className="font-medium">Nuevo Valor</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {editableFields
+                        .map((field) => {
+                          const originalValue = selectedPendingChange.originalData[field]
+                          const newValue = selectedPendingChange.pendingData[field]
+                          const hasChanged = originalValue !== newValue
+
+                          return hasChanged ? (
+                            <TableRow key={field} className="border-b border-yellow-100 dark:border-yellow-800">
+                              <TableCell className="font-medium">{columnDisplayNames[field] || field}</TableCell>
+                              <TableCell>{originalValue}</TableCell>
+                              <TableCell className="text-yellow-800 dark:text-yellow-300 font-medium">
+                                {newValue}
+                              </TableCell>
+                            </TableRow>
+                          ) : null
+                        })
+                        .filter(Boolean)}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+
+              <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-md">
+                <h3 className="font-medium text-green-800 dark:text-green-300 mb-2">Después de confirmar</h3>
+                <p className="text-sm text-green-700 dark:text-green-400">
+                  Al confirmar estos cambios, se reiniciara el proceso, el registro será enviado automáticamente a Training con estado
+                  "Pendiente".
+                </p>
+              </div>
+
+              <DialogFooter className="flex flex-col sm:flex-row justify-between gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleDiscardChanges(selectedPendingChange)}
+                  className="border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  Descartar cambios
+                </Button>
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsConfirmChangesOpen(false)}
+                    className="border-yellow-200 dark:border-yellow-800"
+                  >
+                    Revisar más tarde
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => handleConfirmChanges(selectedPendingChange)}
+                    disabled={isApplyingChanges}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    {isApplyingChanges ? (
+                      <RefreshCw className="animate-spin h-4 w-4 mr-2" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                    )}
+                    Confirmar y enviar a Training
+                  </Button>
+                </div>
+              </DialogFooter>
+            </div>
           )}
         </DialogContent>
       </Dialog>

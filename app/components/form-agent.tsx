@@ -58,15 +58,19 @@ export function AgentForm({ onSubmit, onReturn, hasActionPermission }: AgentForm
   const calcularCargaHoraria = () => {
     let totalHoras = 0
     Object.values(horariosDias).forEach(({ in: horaIn, out: horaOut }) => {
-      if (horaIn !== 'Franco' && horaOut !== 'Franco') {
-        const [inHora, inMinuto] = horaIn.split(':').map(Number)
-        const [outHora, outMinuto] = horaOut.split(':').map(Number)
-        const horasTrabajadas = (outHora - inHora) + (outMinuto - inMinuto) / 60
+      if (horaIn !== "Franco" && horaOut !== "Franco") {
+        const [inHora, inMinuto] = horaIn.split(":").map(Number)
+        const [outHora, outMinuto] = horaOut.split(":").map(Number)
+
+        // Adjust outHora to 24 when it's 0 (midnight)
+        const adjustedOutHora = outHora === 0 ? 24 : outHora
+
+        const horasTrabajadas = adjustedOutHora - inHora + (outMinuto - inMinuto) / 60
         totalHoras += horasTrabajadas
       }
     })
     return `${totalHoras.toFixed(2)} horas`
-  };
+  }
 
   const getMinimumDate = () => {
     const today = new Date()
