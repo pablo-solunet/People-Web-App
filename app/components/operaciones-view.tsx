@@ -309,7 +309,7 @@ export function OperacionesView(props: OperacionesViewProps) {
       const username = currentUser?.username || "Operaciones"
       const currentTimestamp = new Date().toLocaleString()
       updatedFields.log_track = `Cambios confirmados por ${username} at ${currentTimestamp}`
-      updatedFields.append_log = true
+      // updatedFields.append_log = true
 
       const result = await updateAgentForm(pendingChange.id_reg, updatedFields)
 

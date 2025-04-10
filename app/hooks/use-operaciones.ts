@@ -44,6 +44,7 @@ export interface OperacionesData {
   comentario: string
   legajo: string
   documento: string
+  log_track: string
 }
 
 export function useOperaciones() {
